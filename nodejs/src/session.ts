@@ -19,6 +19,9 @@ import type {
     ToolHandler,
 } from "./types.js";
 
+/** Assistant message event - the final response from the assistant. */
+export type AssistantMessageEvent = Extract<SessionEvent, { type: "assistant.message" }>;
+
 /**
  * Represents a single conversation session with the Copilot CLI.
  *
@@ -113,21 +116,29 @@ export class CopilotSession {
      * console.log(response?.data.content); // "4"
      * ```
      */
-    async sendAndWait(options: MessageOptions, timeout?: number): Promise<SessionEvent | undefined> {
+    async sendAndWait(options: MessageOptions, timeout?: number): Promise<AssistantMessageEvent | undefined> {
         const effectiveTimeout = timeout ?? 60_000;
 
         let resolveIdle: () => void;
-        const idlePromise = new Promise<void>((resolve) => {
+        let rejectWithError: (error: Error) => void;
+        const idlePromise = new Promise<void>((resolve, reject) => {
             resolveIdle = resolve;
+            rejectWithError = reject;
         });
 
-        let lastAssistantMessage: SessionEvent | undefined;
+        let lastAssistantMessage: AssistantMessageEvent | undefined;
 
+        // Register event handler BEFORE calling send to avoid race condition
+        // where session.idle fires before we start listening
         const unsubscribe = this.on((event) => {
             if (event.type === "assistant.message") {
                 lastAssistantMessage = event;
             } else if (event.type === "session.idle") {
                 resolveIdle();
+            } else if (event.type === "session.error") {
+                const error = new Error(event.data.message);
+                error.stack = event.data.stack;
+                rejectWithError(error);
             }
         });
 
