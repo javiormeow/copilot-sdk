@@ -11,7 +11,7 @@
 export const SDK_PROTOCOL_VERSION = 1;
 
 /**
- * Gets the SDK protocol version from sdk-protocol-version.json.
+ * Gets the SDK protocol version.
  * @returns The protocol version number
  */
 export function getSdkProtocolVersion(): number {
