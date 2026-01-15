@@ -287,7 +287,7 @@ public class SessionTests(E2ETestFixture fixture, ITestOutputHelper output) : E2
     }
 
     [Fact]
-    public async Task Should_SessionEvt_Subscribed()
+    public async Task Should_Receive_Session_Events()
     {
         var session = await Client.CreateSessionAsync();
         var receivedEvents = new List<SessionEvent>();
