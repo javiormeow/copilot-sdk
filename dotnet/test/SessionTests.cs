@@ -35,13 +35,11 @@ public class SessionTests(E2ETestFixture fixture, ITestOutputHelper output) : E2
     {
         var session = await Client.CreateSessionAsync();
 
-        await session.SendAsync(new MessageOptions { Prompt = "What is 1+1?" });
-        var assistantMessage = await TestHelper.GetFinalAssistantMessageAsync(session);
+        var assistantMessage = await session.SendAndWaitAsync(new MessageOptions { Prompt = "What is 1+1?" });
         Assert.NotNull(assistantMessage);
         Assert.Contains("2", assistantMessage!.Data.Content);
 
-        await session.SendAsync(new MessageOptions { Prompt = "Now if you double that, what do you get?" });
-        var secondMessage = await TestHelper.GetFinalAssistantMessageAsync(session);
+        var secondMessage = await session.SendAndWaitAsync(new MessageOptions { Prompt = "Now if you double that, what do you get?" });
         Assert.NotNull(secondMessage);
         Assert.Contains("4", secondMessage!.Data.Content);
     }
