@@ -637,7 +637,7 @@ func TestSession(t *testing.T) {
 		})
 
 		// Send a message to trigger events
-		_, err = session.Send(copilot.MessageOptions{Prompt: "Hello!"})
+		_, err = session.Send(copilot.MessageOptions{Prompt: "What is 100+200?"})
 		if err != nil {
 			t.Fatalf("Failed to send message: %v", err)
 		}
@@ -676,6 +676,15 @@ func TestSession(t *testing.T) {
 		}
 		if !hasSessionIdle {
 			t.Error("Expected to receive session.idle event")
+		}
+
+		// Verify the assistant response contains the expected answer
+		assistantMessage, err := testharness.GetFinalAssistantMessage(session, 60*time.Second)
+		if err != nil {
+			t.Fatalf("Failed to get assistant message: %v", err)
+		}
+		if assistantMessage.Data.Content == nil || !strings.Contains(*assistantMessage.Data.Content, "300") {
+			t.Errorf("Expected assistant message to contain '300', got %v", assistantMessage.Data.Content)
 		}
 	})
 }

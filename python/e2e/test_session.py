@@ -341,7 +341,7 @@ class TestSessions:
         session.on(on_event)
 
         # Send a message to trigger events
-        await session.send({"prompt": "Hello!"})
+        await session.send({"prompt": "What is 100+200?"})
 
         # Wait for session to become idle
         try:
@@ -355,6 +355,10 @@ class TestSessions:
         assert "user.message" in event_types
         assert "assistant.message" in event_types
         assert "session.idle" in event_types
+
+        # Verify the assistant response contains the expected answer
+        assistant_message = await get_final_assistant_message(session)
+        assert "300" in assistant_message.data.content
 
 
 def _get_system_message(exchange: dict) -> str:

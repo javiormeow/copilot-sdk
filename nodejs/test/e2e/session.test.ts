@@ -316,7 +316,7 @@ describe("Sessions", async () => {
         });
 
         // Send a message to trigger events
-        await session.send({ prompt: "Hello!" });
+        await session.send({ prompt: "What is 100+200?" });
 
         // Wait for session to become idle
         await Promise.race([idlePromise, new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 60000))]);
@@ -326,6 +326,10 @@ describe("Sessions", async () => {
         expect(receivedEvents.some((e) => e.type === "user.message")).toBe(true);
         expect(receivedEvents.some((e) => e.type === "assistant.message")).toBe(true);
         expect(receivedEvents.some((e) => e.type === "session.idle")).toBe(true);
+
+        // Verify the assistant response contains the expected answer
+        const assistantMessage = await getFinalAssistantMessage(session);
+        expect(assistantMessage.data.content).toContain("300");
     });
 });
 

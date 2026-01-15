@@ -5,7 +5,6 @@ conversations:
       - role: system
         content: ${system}
       - role: user
-        content: Hello!
+        content: What is 100+200?
       - role: assistant
-        content: Hello! I'm GitHub Copilot CLI, your terminal assistant. How can I help you today with your software engineering
-          tasks?
+        content: 100 + 200 = 300
