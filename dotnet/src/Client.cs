@@ -765,7 +765,7 @@ public class CopilotClient : IDisposable, IAsyncDisposable
             var session = client.GetSession(sessionId);
             if (session != null && @event != null)
             {
-                var evt = SessionEvent.FromJson(@event.ToString()!);
+                var evt = SessionEvent.FromJson(@event.Value.GetRawText());
                 session.DispatchEvent(evt);
             }
         }
@@ -957,10 +957,6 @@ public class CopilotClient : IDisposable, IAsyncDisposable
 
     private record ListSessionsResponse(
         List<SessionMetadata> Sessions);
-
-    private record SessionEventNotification(
-        string SessionId,
-        JsonElement? Event);
 
     private record ToolCallResponse(
         ToolResultObject? Result);
