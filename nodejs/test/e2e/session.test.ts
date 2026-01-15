@@ -319,7 +319,10 @@ describe("Sessions", async () => {
         await session.send({ prompt: "What is 100+200?" });
 
         // Wait for session to become idle
-        await Promise.race([idlePromise, new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 60000))]);
+        await Promise.race([
+            idlePromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 60000)),
+        ]);
 
         // Should have received multiple events
         expect(receivedEvents.length).toBeGreaterThan(0);
