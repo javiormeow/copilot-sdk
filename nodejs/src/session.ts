@@ -31,17 +31,16 @@ import type {
  * const session = await client.createSession({ model: "gpt-4" });
  *
  * // Subscribe to events
- * const unsubscribe = session.on((event) => {
+ * session.on((event) => {
  *   if (event.type === "assistant.message") {
  *     console.log(event.data.content);
  *   }
  * });
  *
- * // Send a message
- * await session.send({ prompt: "Hello, world!" });
+ * // Send a message and wait for completion
+ * await session.sendAndWait({ prompt: "Hello, world!" });
  *
  * // Clean up
- * unsubscribe();
  * await session.destroy();
  * ```
  */
@@ -89,6 +88,77 @@ export class CopilotSession {
         });
 
         return (response as { messageId: string }).messageId;
+    }
+
+    /**
+     * Sends a message to this session and waits until the session becomes idle.
+     *
+     * This is a convenience method that combines {@link send} with waiting for
+     * the `session.idle` event. Use this when you want to block until the
+     * assistant has finished processing the message.
+     *
+     * Events are still delivered to handlers registered via {@link on} while waiting.
+     *
+     * @param options - The message options including the prompt and optional attachments
+     * @param timeout - Optional timeout in milliseconds. If not provided, waits indefinitely.
+     * @returns A promise that resolves with the final assistant message when the session becomes idle,
+     *          or undefined if no assistant message was received
+     * @throws Error if the timeout is reached before the session becomes idle
+     * @throws Error if the session has been destroyed or the connection fails
+     *
+     * @example
+     * ```typescript
+     * // Send and wait for completion with a 5-minute timeout
+     * const response = await session.sendAndWait(
+     *   { prompt: "What is 2+2?" },
+     *   300_000
+     * );
+     * console.log(response?.data.content); // "4"
+     * ```
+     */
+    async sendAndWait(options: MessageOptions, timeout?: number): Promise<SessionEvent | undefined> {
+        // Track whether we've started the send - only count idle events after this point
+        let sendStarted = false;
+        let resolveIdle: () => void;
+        const idlePromise = new Promise<void>((resolve) => {
+            resolveIdle = resolve;
+        });
+
+        // Track the last assistant message received
+        let lastAssistantMessage: SessionEvent | undefined;
+
+        // Register listener BEFORE sending, but only resolve for idle events
+        // that arrive after we've initiated the send (to ignore stale events)
+        const unsubscribe = this.on((event) => {
+            if (sendStarted) {
+                if (event.type === "assistant.message") {
+                    lastAssistantMessage = event;
+                } else if (event.type === "session.idle") {
+                    resolveIdle();
+                }
+            }
+        });
+
+        try {
+            // Mark send as started and initiate - these are synchronous so no events
+            // can sneak in between setting the flag and starting the send
+            sendStarted = true;
+            await this.send(options);
+
+            // Wait for idle with optional timeout
+            if (timeout !== undefined) {
+                const timeoutPromise = new Promise<never>((_, reject) => {
+                    setTimeout(() => reject(new Error(`Timeout after ${timeout}ms waiting for session.idle`)), timeout);
+                });
+                await Promise.race([idlePromise, timeoutPromise]);
+            } else {
+                await idlePromise;
+            }
+
+            return lastAssistantMessage;
+        } finally {
+            unsubscribe();
+        }
     }
 
     /**

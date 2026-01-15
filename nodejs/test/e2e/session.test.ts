@@ -342,3 +342,46 @@ function getSystemMessage(exchange: ParsedHttpExchange): string | undefined {
         | undefined;
     return systemMessage?.content;
 }
+
+describe("Send Blocking Behavior", async () => {
+    // Tests for Issue #17: send() should return immediately, not block until turn completes
+    const { copilotClient: client } = await createSdkTestContext();
+
+    it("send returns immediately while events stream in background", async () => {
+        const session = await client.createSession();
+
+        const events: string[] = [];
+        session.on((event) => {
+            events.push(event.type);
+        });
+
+        await session.send({ prompt: "What is 1+1?" });
+
+        // send() should return before turn completes (no session.idle yet)
+        expect(events).not.toContain("session.idle");
+
+        // Wait for turn to complete
+        const message = await getFinalAssistantMessage(session);
+
+        expect(message.data.content).toContain("2");
+        expect(events).toContain("session.idle");
+        expect(events).toContain("assistant.message");
+    });
+
+    it("sendAndWait blocks until session.idle and returns final assistant message", async () => {
+        const session = await client.createSession();
+
+        const events: string[] = [];
+        session.on((event) => {
+            events.push(event.type);
+        });
+
+        const response = await session.sendAndWait({ prompt: "What is 2+2?" });
+
+        expect(response).toBeDefined();
+        expect(response?.type).toBe("assistant.message");
+        expect(response?.data.content).toContain("4");
+        expect(events).toContain("session.idle");
+        expect(events).toContain("assistant.message");
+    });
+});
