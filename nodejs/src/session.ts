@@ -100,7 +100,7 @@ export class CopilotSession {
      * Events are still delivered to handlers registered via {@link on} while waiting.
      *
      * @param options - The message options including the prompt and optional attachments
-     * @param timeout - Optional timeout in milliseconds. If not provided, waits indefinitely.
+     * @param timeout - Timeout in milliseconds (default: 60000)
      * @returns A promise that resolves with the final assistant message when the session becomes idle,
      *          or undefined if no assistant message was received
      * @throws Error if the timeout is reached before the session becomes idle
@@ -108,52 +108,39 @@ export class CopilotSession {
      *
      * @example
      * ```typescript
-     * // Send and wait for completion with a 5-minute timeout
-     * const response = await session.sendAndWait(
-     *   { prompt: "What is 2+2?" },
-     *   300_000
-     * );
+     * // Send and wait for completion with default 60s timeout
+     * const response = await session.sendAndWait({ prompt: "What is 2+2?" });
      * console.log(response?.data.content); // "4"
      * ```
      */
     async sendAndWait(options: MessageOptions, timeout?: number): Promise<SessionEvent | undefined> {
-        // Track whether we've started the send - only count idle events after this point
-        let sendStarted = false;
+        const effectiveTimeout = timeout ?? 60_000;
+
         let resolveIdle: () => void;
         const idlePromise = new Promise<void>((resolve) => {
             resolveIdle = resolve;
         });
 
-        // Track the last assistant message received
         let lastAssistantMessage: SessionEvent | undefined;
 
-        // Register listener BEFORE sending, but only resolve for idle events
-        // that arrive after we've initiated the send (to ignore stale events)
         const unsubscribe = this.on((event) => {
-            if (sendStarted) {
-                if (event.type === "assistant.message") {
-                    lastAssistantMessage = event;
-                } else if (event.type === "session.idle") {
-                    resolveIdle();
-                }
+            if (event.type === "assistant.message") {
+                lastAssistantMessage = event;
+            } else if (event.type === "session.idle") {
+                resolveIdle();
             }
         });
 
         try {
-            // Mark send as started and initiate - these are synchronous so no events
-            // can sneak in between setting the flag and starting the send
-            sendStarted = true;
             await this.send(options);
 
-            // Wait for idle with optional timeout
-            if (timeout !== undefined) {
-                const timeoutPromise = new Promise<never>((_, reject) => {
-                    setTimeout(() => reject(new Error(`Timeout after ${timeout}ms waiting for session.idle`)), timeout);
-                });
-                await Promise.race([idlePromise, timeoutPromise]);
-            } else {
-                await idlePromise;
-            }
+            const timeoutPromise = new Promise<never>((_, reject) => {
+                setTimeout(
+                    () => reject(new Error(`Timeout after ${effectiveTimeout}ms waiting for session.idle`)),
+                    effectiveTimeout
+                );
+            });
+            await Promise.race([idlePromise, timeoutPromise]);
 
             return lastAssistantMessage;
         } finally {
