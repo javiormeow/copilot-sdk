@@ -759,12 +759,13 @@ public class CopilotClient : IDisposable, IAsyncDisposable
     private class RpcHandler(CopilotClient client)
     {
         [JsonRpcMethod("session.event")]
-        public void OnSessionEvent(SessionEventNotification notification)
+        public void OnSessionEvent(string sessionId,
+            JsonElement? @event)
         {
-            var session = client.GetSession(notification.SessionId);
-            if (session != null && notification.Event != null)
+            var session = client.GetSession(sessionId);
+            if (session != null && @event != null)
             {
-                var evt = SessionEvent.FromJson(notification.Event.ToString());
+                var evt = SessionEvent.FromJson(@event.ToString()!);
                 session.DispatchEvent(evt);
             }
         }
@@ -959,7 +960,7 @@ public class CopilotClient : IDisposable, IAsyncDisposable
 
     private record SessionEventNotification(
         string SessionId,
-        JToken? Event);
+        JsonElement? Event);
 
     private record ToolCallResponse(
         ToolResultObject? Result);
