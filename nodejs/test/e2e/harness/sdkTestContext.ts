@@ -17,9 +17,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const SNAPSHOTS_DIR = resolve(__dirname, "../../../../test/snapshots");
 
+<<<<<<< HEAD
 export const CLI_PATH =
     process.env.COPILOT_CLI_PATH ||
     resolve(__dirname, "../../../node_modules/@github/copilot/index.js");
+=======
+export const CLI_PATH = process.env.COPILOT_CLI_PATH || resolve(__dirname, "../../../node_modules/@github/copilot/index.js");
+>>>>>>> 0ab885b (E2E infrastructure: skip writing snapshots on failure + update snapshots for extended thinking)
 
 export async function createSdkTestContext() {
     const homeDir = realpathSync(fs.mkdtempSync(join(os.tmpdir(), "copilot-test-config-")));
