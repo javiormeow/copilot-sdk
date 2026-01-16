@@ -331,6 +331,10 @@ public class SessionTests(E2ETestFixture fixture, ITestOutputHelper output) : E2
 
         Assert.Matches(@"^[a-f0-9-]+$", session.SessionId);
 
+        // Verify session state was written to the custom config dir
+        var sessionStatePath = Path.Combine(customConfigDir, "session-state", session.SessionId);
+        Assert.True(Directory.Exists(sessionStatePath), $"Expected session state at {sessionStatePath}");
+
         // Session should work normally with custom config dir
         await session.SendAsync(new MessageOptions { Prompt = "What is 1+1?" });
         var assistantMessage = await TestHelper.GetFinalAssistantMessageAsync(session);

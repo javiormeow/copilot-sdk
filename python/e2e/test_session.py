@@ -368,6 +368,10 @@ class TestSessions:
 
         assert session.session_id
 
+        # Verify session state was written to the custom config dir
+        session_state_path = os.path.join(custom_config_dir, "session-state", session.session_id)
+        assert os.path.exists(session_state_path), f"Expected session state at {session_state_path}"
+
         # Session should work normally with custom config dir
         await session.send({"prompt": "What is 1+1?"})
         assistant_message = await get_final_assistant_message(session)

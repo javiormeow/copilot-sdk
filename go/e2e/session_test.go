@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -702,6 +703,12 @@ func TestSession(t *testing.T) {
 		matched, _ := regexp.MatchString(`^[a-f0-9-]+$`, session.SessionID)
 		if !matched {
 			t.Errorf("Expected session ID to match UUID pattern, got %q", session.SessionID)
+		}
+
+		// Verify session state was written to the custom config dir
+		sessionStatePath := customConfigDir + "/session-state/" + session.SessionID
+		if _, err := os.Stat(sessionStatePath); os.IsNotExist(err) {
+			t.Fatalf("Expected session state at %s", sessionStatePath)
 		}
 
 		// Session should work normally with custom config dir

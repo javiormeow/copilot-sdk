@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import { describe, expect, it, onTestFinished } from "vitest";
 import { ParsedHttpExchange } from "../../../test/harness/replayingCapiProxy.js";
 import { CopilotClient } from "../../src/index.js";
@@ -342,6 +343,10 @@ describe("Sessions", async () => {
         });
 
         expect(session.sessionId).toMatch(/^[a-f0-9-]+$/);
+
+        // Verify session state was written to the custom config dir
+        const sessionStatePath = `${customConfigDir}/session-state/${session.sessionId}`;
+        expect(fs.existsSync(sessionStatePath)).toBe(true);
 
         // Session should work normally with custom config dir
         await session.send({ prompt: "What is 1+1?" });
