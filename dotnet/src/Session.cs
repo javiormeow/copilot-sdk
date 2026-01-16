@@ -157,6 +157,11 @@ public class CopilotSession : IAsyncDisposable
             {
                 tcs.TrySetResult(lastAssistantMessage);
             }
+            else if (evt.Type == "session.error")
+            {
+                var message = evt.Data?.ToString() ?? "session error";
+                tcs.TrySetException(new InvalidOperationException($"Session error: {message}"));
+            }
         }
 
         using var subscription = On(Handler);

@@ -147,6 +147,7 @@ func (s *Session) SendAndWait(options MessageOptions, timeout time.Duration) (*S
 	}
 
 	idleCh := make(chan struct{}, 1)
+	errCh := make(chan error, 1)
 	var lastAssistantMessage *SessionEvent
 	var mu sync.Mutex
 
@@ -159,6 +160,15 @@ func (s *Session) SendAndWait(options MessageOptions, timeout time.Duration) (*S
 		} else if event.Type == generated.SessionIdle {
 			select {
 			case idleCh <- struct{}{}:
+			default:
+			}
+		} else if event.Type == generated.SessionError {
+			errMsg := "session error"
+			if event.Data.Message != nil {
+				errMsg = *event.Data.Message
+			}
+			select {
+			case errCh <- fmt.Errorf("session error: %s", errMsg):
 			default:
 			}
 		}
@@ -176,6 +186,8 @@ func (s *Session) SendAndWait(options MessageOptions, timeout time.Duration) (*S
 		result := lastAssistantMessage
 		mu.Unlock()
 		return result, nil
+	case err := <-errCh:
+		return nil, err
 	case <-time.After(timeout):
 		return nil, fmt.Errorf("timeout after %v waiting for session.idle", timeout)
 	}
