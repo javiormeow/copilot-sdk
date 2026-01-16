@@ -29,12 +29,12 @@ class TestSessions:
     async def test_should_have_stateful_conversation(self, ctx: E2ETestContext):
         session = await ctx.client.create_session()
 
-        await session.send({"prompt": "What is 1+1?"})
-        assistant_message = await get_final_assistant_message(session)
+        assistant_message = await session.send_and_wait({"prompt": "What is 1+1?"})
+        assert assistant_message is not None
         assert "2" in assistant_message.data.content
 
-        await session.send({"prompt": "Now if you double that, what do you get?"})
-        second_message = await get_final_assistant_message(session)
+        second_message = await session.send_and_wait({"prompt": "Now if you double that, what do you get?"})
+        assert second_message is not None
         assert "4" in second_message.data.content
 
     async def test_should_create_a_session_with_appended_systemMessage_config(
@@ -137,8 +137,8 @@ class TestSessions:
         # Create initial session
         session1 = await ctx.client.create_session()
         session_id = session1.session_id
-        await session1.send({"prompt": "What is 1+1?"})
-        answer = await get_final_assistant_message(session1)
+        answer = await session1.send_and_wait({"prompt": "What is 1+1?"})
+        assert answer is not None
         assert "2" in answer.data.content
 
         # Resume using the same client
@@ -151,8 +151,8 @@ class TestSessions:
         # Create initial session
         session1 = await ctx.client.create_session()
         session_id = session1.session_id
-        await session1.send({"prompt": "What is 1+1?"})
-        answer = await get_final_assistant_message(session1)
+        answer = await session1.send_and_wait({"prompt": "What is 1+1?"})
+        assert answer is not None
         assert "2" in answer.data.content
 
         # Resume using a new client
@@ -204,7 +204,7 @@ class TestSessions:
             }
         )
 
-        await session.send({"prompt": "What is the secret number for key ALPHA?"})
+        await session.send_and_wait({"prompt": "What is the secret number for key ALPHA?"})
         answer = await get_final_assistant_message(session)
         assert "54321" in answer.data.content
 
