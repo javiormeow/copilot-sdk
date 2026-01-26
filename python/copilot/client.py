@@ -239,7 +239,7 @@ class CopilotClient:
             >>> errors = await client.stop()
             >>> if errors:
             ...     for error in errors:
-            ...         print(f"Cleanup error: {error['message']}")
+            ...         print(f"Cleanup error: {error.message}")
         """
         errors: list[StopError] = []
 
@@ -253,7 +253,9 @@ class CopilotClient:
             try:
                 await session.destroy()
             except Exception as e:
-                errors.append({"message": f"Failed to destroy session {session.session_id}: {e}"})
+                errors.append(
+                    StopError(message=f"Failed to destroy session {session.session_id}: {e}")
+                )
 
         # Close client
         if self._client:
@@ -580,59 +582,61 @@ class CopilotClient:
             message: Optional message to include in the ping.
 
         Returns:
-            A PingResponse containing the ping response with 'message',
-            'timestamp', and 'protocolVersion' keys.
+            A PingResponse object containing the ping response.
 
         Raises:
             RuntimeError: If the client is not connected.
 
         Example:
             >>> response = await client.ping("health check")
-            >>> print(f"Server responded at {response['timestamp']}")
+            >>> print(f"Server responded at {response.timestamp}")
         """
         if not self._client:
             raise RuntimeError("Client not connected")
 
-        return await self._client.request("ping", {"message": message})
+        result = await self._client.request("ping", {"message": message})
+        return PingResponse.from_dict(result)
 
     async def get_status(self) -> "GetStatusResponse":
         """
         Get CLI status including version and protocol information.
 
         Returns:
-            A GetStatusResponse containing version and protocolVersion.
+            A GetStatusResponse object containing version and protocolVersion.
 
         Raises:
             RuntimeError: If the client is not connected.
 
         Example:
             >>> status = await client.get_status()
-            >>> print(f"CLI version: {status['version']}")
+            >>> print(f"CLI version: {status.version}")
         """
         if not self._client:
             raise RuntimeError("Client not connected")
 
-        return await self._client.request("status.get", {})
+        result = await self._client.request("status.get", {})
+        return GetStatusResponse.from_dict(result)
 
     async def get_auth_status(self) -> "GetAuthStatusResponse":
         """
         Get current authentication status.
 
         Returns:
-            A GetAuthStatusResponse containing authentication state.
+            A GetAuthStatusResponse object containing authentication state.
 
         Raises:
             RuntimeError: If the client is not connected.
 
         Example:
             >>> auth = await client.get_auth_status()
-            >>> if auth['isAuthenticated']:
-            ...     print(f"Logged in as {auth.get('login')}")
+            >>> if auth.isAuthenticated:
+            ...     print(f"Logged in as {auth.login}")
         """
         if not self._client:
             raise RuntimeError("Client not connected")
 
-        return await self._client.request("auth.getStatus", {})
+        result = await self._client.request("auth.getStatus", {})
+        return GetAuthStatusResponse.from_dict(result)
 
     async def list_models(self) -> list["ModelInfo"]:
         """
@@ -648,13 +652,14 @@ class CopilotClient:
         Example:
             >>> models = await client.list_models()
             >>> for model in models:
-            ...     print(f"{model['id']}: {model['name']}")
+            ...     print(f"{model.id}: {model.name}")
         """
         if not self._client:
             raise RuntimeError("Client not connected")
 
         response = await self._client.request("models.list", {})
-        return response.get("models", [])
+        models_data = response.get("models", [])
+        return [ModelInfo.from_dict(model) for model in models_data]
 
     async def list_sessions(self) -> list["SessionMetadata"]:
         """
@@ -663,9 +668,7 @@ class CopilotClient:
         Returns metadata about each session including ID, timestamps, and summary.
 
         Returns:
-            A list of session metadata dictionaries with keys: sessionId (str),
-            startTime (str), modifiedTime (str), summary (str, optional),
-            and isRemote (bool).
+            A list of SessionMetadata objects.
 
         Raises:
             RuntimeError: If the client is not connected.
@@ -673,13 +676,14 @@ class CopilotClient:
         Example:
             >>> sessions = await client.list_sessions()
             >>> for session in sessions:
-            ...     print(f"Session: {session['sessionId']}")
+            ...     print(f"Session: {session.sessionId}")
         """
         if not self._client:
             raise RuntimeError("Client not connected")
 
         response = await self._client.request("session.list", {})
-        return response.get("sessions", [])
+        sessions_data = response.get("sessions", [])
+        return [SessionMetadata.from_dict(session) for session in sessions_data]
 
     async def delete_session(self, session_id: str) -> None:
         """
