@@ -319,10 +319,15 @@ class PingResponse:
     @staticmethod
     def from_dict(obj: Any) -> PingResponse:
         assert isinstance(obj, dict)
-        message = str(obj.get("message"))
-        timestamp = int(obj.get("timestamp"))
-        protocolVersion = int(obj.get("protocolVersion"))
-        return PingResponse(message, timestamp, protocolVersion)
+        message = obj.get("message")
+        timestamp = obj.get("timestamp")
+        protocolVersion = obj.get("protocolVersion")
+        if message is None or timestamp is None or protocolVersion is None:
+            raise ValueError(
+                f"Missing required fields in PingResponse: message={message}, "
+                f"timestamp={timestamp}, protocolVersion={protocolVersion}"
+            )
+        return PingResponse(str(message), int(timestamp), int(protocolVersion))
 
     def to_dict(self) -> dict:
         result: dict = {}
@@ -342,8 +347,10 @@ class StopError:
     @staticmethod
     def from_dict(obj: Any) -> StopError:
         assert isinstance(obj, dict)
-        message = str(obj.get("message"))
-        return StopError(message)
+        message = obj.get("message")
+        if message is None:
+            raise ValueError("Missing required field 'message' in StopError")
+        return StopError(str(message))
 
     def to_dict(self) -> dict:
         result: dict = {}
@@ -362,9 +369,14 @@ class GetStatusResponse:
     @staticmethod
     def from_dict(obj: Any) -> GetStatusResponse:
         assert isinstance(obj, dict)
-        version = str(obj.get("version"))
-        protocolVersion = int(obj.get("protocolVersion"))
-        return GetStatusResponse(version, protocolVersion)
+        version = obj.get("version")
+        protocolVersion = obj.get("protocolVersion")
+        if version is None or protocolVersion is None:
+            raise ValueError(
+                f"Missing required fields in GetStatusResponse: version={version}, "
+                f"protocolVersion={protocolVersion}"
+            )
+        return GetStatusResponse(str(version), int(protocolVersion))
 
     def to_dict(self) -> dict:
         result: dict = {}
@@ -387,13 +399,15 @@ class GetAuthStatusResponse:
     @staticmethod
     def from_dict(obj: Any) -> GetAuthStatusResponse:
         assert isinstance(obj, dict)
-        isAuthenticated = bool(obj.get("isAuthenticated"))
+        isAuthenticated = obj.get("isAuthenticated")
+        if isAuthenticated is None:
+            raise ValueError("Missing required field 'isAuthenticated' in GetAuthStatusResponse")
         authType = obj.get("authType")
         host = obj.get("host")
         login = obj.get("login")
         statusMessage = obj.get("statusMessage")
         return GetAuthStatusResponse(
-            isAuthenticated=isAuthenticated,
+            isAuthenticated=bool(isAuthenticated),
             authType=authType,
             host=host,
             login=login,
@@ -487,8 +501,10 @@ class ModelSupports:
     @staticmethod
     def from_dict(obj: Any) -> ModelSupports:
         assert isinstance(obj, dict)
-        vision = bool(obj.get("vision"))
-        return ModelSupports(vision=vision)
+        vision = obj.get("vision")
+        if vision is None:
+            raise ValueError("Missing required field 'vision' in ModelSupports")
+        return ModelSupports(vision=bool(vision))
 
     def to_dict(self) -> dict:
         result: dict = {}
@@ -506,8 +522,15 @@ class ModelCapabilities:
     @staticmethod
     def from_dict(obj: Any) -> ModelCapabilities:
         assert isinstance(obj, dict)
-        supports = ModelSupports.from_dict(obj.get("supports"))
-        limits = ModelLimits.from_dict(obj.get("limits"))
+        supports_dict = obj.get("supports")
+        limits_dict = obj.get("limits")
+        if supports_dict is None or limits_dict is None:
+            raise ValueError(
+                f"Missing required fields in ModelCapabilities: supports={supports_dict}, "
+                f"limits={limits_dict}"
+            )
+        supports = ModelSupports.from_dict(supports_dict)
+        limits = ModelLimits.from_dict(limits_dict)
         return ModelCapabilities(supports=supports, limits=limits)
 
     def to_dict(self) -> dict:
@@ -527,9 +550,13 @@ class ModelPolicy:
     @staticmethod
     def from_dict(obj: Any) -> ModelPolicy:
         assert isinstance(obj, dict)
-        state = str(obj.get("state"))
-        terms = str(obj.get("terms"))
-        return ModelPolicy(state=state, terms=terms)
+        state = obj.get("state")
+        terms = obj.get("terms")
+        if state is None or terms is None:
+            raise ValueError(
+                f"Missing required fields in ModelPolicy: state={state}, terms={terms}"
+            )
+        return ModelPolicy(state=str(state), terms=str(terms))
 
     def to_dict(self) -> dict:
         result: dict = {}
@@ -547,8 +574,10 @@ class ModelBilling:
     @staticmethod
     def from_dict(obj: Any) -> ModelBilling:
         assert isinstance(obj, dict)
-        multiplier = float(obj.get("multiplier"))
-        return ModelBilling(multiplier=multiplier)
+        multiplier = obj.get("multiplier")
+        if multiplier is None:
+            raise ValueError("Missing required field 'multiplier' in ModelBilling")
+        return ModelBilling(multiplier=float(multiplier))
 
     def to_dict(self) -> dict:
         result: dict = {}
@@ -569,15 +598,21 @@ class ModelInfo:
     @staticmethod
     def from_dict(obj: Any) -> ModelInfo:
         assert isinstance(obj, dict)
-        id = str(obj.get("id"))
-        name = str(obj.get("name"))
-        capabilities = ModelCapabilities.from_dict(obj.get("capabilities"))
+        id = obj.get("id")
+        name = obj.get("name")
+        capabilities_dict = obj.get("capabilities")
+        if id is None or name is None or capabilities_dict is None:
+            raise ValueError(
+                f"Missing required fields in ModelInfo: id={id}, name={name}, "
+                f"capabilities={capabilities_dict}"
+            )
+        capabilities = ModelCapabilities.from_dict(capabilities_dict)
         policy_dict = obj.get("policy")
         policy = ModelPolicy.from_dict(policy_dict) if policy_dict else None
         billing_dict = obj.get("billing")
         billing = ModelBilling.from_dict(billing_dict) if billing_dict else None
         return ModelInfo(
-            id=id, name=name, capabilities=capabilities, policy=policy, billing=billing
+            id=str(id), name=str(name), capabilities=capabilities, policy=policy, billing=billing
         )
 
     def to_dict(self) -> dict:
@@ -605,16 +640,21 @@ class SessionMetadata:
     @staticmethod
     def from_dict(obj: Any) -> SessionMetadata:
         assert isinstance(obj, dict)
-        sessionId = str(obj.get("sessionId"))
-        startTime = str(obj.get("startTime"))
-        modifiedTime = str(obj.get("modifiedTime"))
-        isRemote = bool(obj.get("isRemote"))
+        sessionId = obj.get("sessionId")
+        startTime = obj.get("startTime")
+        modifiedTime = obj.get("modifiedTime")
+        isRemote = obj.get("isRemote")
+        if sessionId is None or startTime is None or modifiedTime is None or isRemote is None:
+            raise ValueError(
+                f"Missing required fields in SessionMetadata: sessionId={sessionId}, "
+                f"startTime={startTime}, modifiedTime={modifiedTime}, isRemote={isRemote}"
+            )
         summary = obj.get("summary")
         return SessionMetadata(
-            sessionId=sessionId,
-            startTime=startTime,
-            modifiedTime=modifiedTime,
-            isRemote=isRemote,
+            sessionId=str(sessionId),
+            startTime=str(startTime),
+            modifiedTime=str(modifiedTime),
+            isRemote=bool(isRemote),
             summary=summary,
         )
 
