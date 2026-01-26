@@ -19,7 +19,7 @@ import re
 import subprocess
 import threading
 from dataclasses import asdict, is_dataclass
-from typing import Any, Optional, cast
+from typing import Any, Optional, Union, cast, overload
 
 from .generated.session_events import session_event_from_dict
 from .jsonrpc import JsonRpcClient
@@ -452,8 +452,20 @@ class CopilotClient:
 
         return session
 
+    @overload
     async def resume_session(
         self, session_id: str, config: Optional[ResumeSessionConfig] = None
+    ) -> CopilotSession: ...
+
+    @overload
+    async def resume_session(
+        self, config: ResumeSessionConfig
+    ) -> CopilotSession: ...
+
+    async def resume_session(
+        self,
+        session_id_or_config: Union[str, ResumeSessionConfig],
+        config: Optional[ResumeSessionConfig] = None
     ) -> CopilotSession:
         """
         Resume an existing conversation session by its ID.
@@ -462,32 +474,73 @@ class CopilotClient:
         conversation history. The session must have been previously created
         and not deleted.
 
+        This method supports two calling styles:
+
+        1. Two-argument style (recommended):
+           ``resume_session(session_id, config)``
+
+        2. Single-argument style (for consistency with create_session):
+           ``resume_session(config)`` where config includes ``session_id``
+
         Args:
-            session_id: The ID of the session to resume.
-            config: Optional configuration for the resumed session.
+            session_id_or_config: Either the session ID as a string, or a config dict
+                that includes the ``session_id`` field.
+            config: Optional configuration for the resumed session (only used with
+                two-argument style).
 
         Returns:
             A :class:`CopilotSession` instance for the resumed session.
 
         Raises:
             RuntimeError: If the session does not exist or the client is not connected.
+            ValueError: If session_id is not provided in either argument.
 
-        Example:
-            >>> # Resume a previous session
+        Examples:
+            >>> # Two-argument style (recommended)
             >>> session = await client.resume_session("session-123")
             >>>
-            >>> # Resume with new tools
+            >>> # Resume with new tools (two-argument style)
             >>> session = await client.resume_session("session-123", {
             ...     "tools": [my_new_tool]
             ... })
+            >>>
+            >>> # Single-argument style (for consistency with create_session)
+            >>> session = await client.resume_session({
+            ...     "session_id": "session-123",
+            ...     "tools": [my_new_tool]
+            ... })
         """
+        # Determine which calling style is being used (before client check for better errors)
+        if isinstance(session_id_or_config, str):
+            # Two-argument style: session_id as string, optional config dict
+            session_id = session_id_or_config
+            cfg = config or {}
+        elif isinstance(session_id_or_config, dict):
+            # Single-argument style: config dict with session_id field
+            if config is not None:
+                raise TypeError(
+                    "When passing a config dict as the first argument, "
+                    "do not provide a second argument. "
+                    "Use either resume_session(session_id, config) or resume_session(config)."
+                )
+            cfg = session_id_or_config
+            session_id = cfg.get("session_id")
+            if not session_id:
+                raise ValueError(
+                    "When using single-argument style, config dict must include 'session_id' field. "
+                    "Example: resume_session({'session_id': 'my-session', 'tools': [...]}) "
+                    "or use two-argument style: resume_session('my-session', {'tools': [...]})"
+                )
+        else:
+            raise TypeError(
+                f"First argument must be a string (session_id) or dict (config), got {type(session_id_or_config).__name__}"
+            )
+
         if not self._client:
             if self.options["auto_start"]:
                 await self.start()
             else:
                 raise RuntimeError("Client not connected. Call start() first.")
-
-        cfg = config or {}
 
         tool_defs = []
         tools = cfg.get("tools")

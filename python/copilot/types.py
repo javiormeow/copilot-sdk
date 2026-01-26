@@ -277,6 +277,7 @@ class ProviderConfig(TypedDict, total=False):
 class ResumeSessionConfig(TypedDict, total=False):
     """Configuration for resuming a session"""
 
+    session_id: str  # Session ID to resume (required when using single-argument style)
     tools: list[Tool]
     provider: ProviderConfig
     on_permission_request: PermissionHandler

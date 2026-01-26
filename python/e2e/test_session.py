@@ -315,6 +315,65 @@ class TestSessions:
 
         assert session2.session_id == session_id
 
+    async def test_should_resume_session_with_tools_single_arg_style(self, ctx: E2ETestContext):
+        """Test resuming session with tools using single-argument config dict style"""
+        from pydantic import BaseModel, Field
+        from copilot import define_tool
+
+        # Define a test tool
+        class WeatherParams(BaseModel):
+            location: str = Field(description="Location to get weather for")
+
+        @define_tool("get_weather", description="Get weather for a location")
+        def get_weather(params: WeatherParams) -> str:
+            return f"The weather in {params.location} is sunny."
+
+        # Create initial session
+        session1 = await ctx.client.create_session()
+        session_id = session1.session_id
+        
+        # Resume session with tools using single-argument style (config dict with session_id)
+        session2 = await ctx.client.resume_session({
+            "session_id": session_id,
+            "tools": [get_weather]
+        })
+        
+        assert session2.session_id == session_id
+        
+        # Verify the tool works in resumed session
+        answer = await session2.send_and_wait({"prompt": "What is the weather in London?"})
+        assert answer is not None
+        assert "sunny" in answer.data.content.lower()
+
+    async def test_should_resume_session_with_tools_two_arg_style(self, ctx: E2ETestContext):
+        """Test resuming session with tools using traditional two-argument style"""
+        from pydantic import BaseModel, Field
+        from copilot import define_tool
+
+        # Define a test tool
+        class WeatherParams(BaseModel):
+            location: str = Field(description="Location to get weather for")
+
+        @define_tool("get_weather", description="Get weather for a location")
+        def get_weather(params: WeatherParams) -> str:
+            return f"The weather in {params.location} is rainy."
+
+        # Create initial session
+        session1 = await ctx.client.create_session()
+        session_id = session1.session_id
+        
+        # Resume session with tools using two-argument style (traditional)
+        session2 = await ctx.client.resume_session(session_id, {
+            "tools": [get_weather]
+        })
+        
+        assert session2.session_id == session_id
+        
+        # Verify the tool works in resumed session
+        answer = await session2.send_and_wait({"prompt": "What is the weather in Paris?"})
+        assert answer is not None
+        assert "rainy" in answer.data.content.lower()
+
     async def test_should_abort_a_session(self, ctx: E2ETestContext):
         import asyncio
 
