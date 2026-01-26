@@ -277,7 +277,11 @@ class ProviderConfig(TypedDict, total=False):
 class ResumeSessionConfig(TypedDict, total=False):
     """Configuration for resuming a session"""
 
-    session_id: str  # Session ID to resume (required when using single-argument style)
+    # Session ID to resume. When using single-argument style
+    # (resume_session(config)), this field must be provided in the config dict.
+    # When using two-argument style (resume_session(session_id, config)),
+    # this field is ignored.
+    session_id: str
     tools: list[Tool]
     provider: ProviderConfig
     on_permission_request: PermissionHandler

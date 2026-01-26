@@ -318,6 +318,7 @@ class TestSessions:
     async def test_should_resume_session_with_tools_single_arg_style(self, ctx: E2ETestContext):
         """Test resuming session with tools using single-argument config dict style"""
         from pydantic import BaseModel, Field
+
         from copilot import define_tool
 
         # Define a test tool
@@ -347,9 +348,10 @@ class TestSessions:
     async def test_should_resume_session_with_tools_two_arg_style(self, ctx: E2ETestContext):
         """Test resuming session with tools using traditional two-argument style"""
         from pydantic import BaseModel, Field
+
         from copilot import define_tool
 
-        # Define a test tool
+        # Use a different weather to distinguish from the other test
         class WeatherParams(BaseModel):
             location: str = Field(description="Location to get weather for")
 

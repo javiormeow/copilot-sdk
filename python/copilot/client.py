@@ -518,7 +518,8 @@ class CopilotClient:
             if config is not None:
                 raise TypeError(
                     "When passing a config dict as the first argument, "
-                    "do not provide a second argument. "
+                    "do not provide a second argument. You passed both a config dict "
+                    "as the first parameter and a config dict as the second parameter. "
                     "Use either resume_session(session_id, config) or resume_session(config)."
                 )
             cfg = session_id_or_config
