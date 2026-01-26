@@ -331,15 +331,14 @@ class TestSessions:
         # Create initial session
         session1 = await ctx.client.create_session()
         session_id = session1.session_id
-        
+
         # Resume session with tools using single-argument style (config dict with session_id)
-        session2 = await ctx.client.resume_session({
-            "session_id": session_id,
-            "tools": [get_weather]
-        })
-        
+        session2 = await ctx.client.resume_session(
+            {"session_id": session_id, "tools": [get_weather]}
+        )
+
         assert session2.session_id == session_id
-        
+
         # Verify the tool works in resumed session
         answer = await session2.send_and_wait({"prompt": "What is the weather in London?"})
         assert answer is not None
@@ -361,14 +360,12 @@ class TestSessions:
         # Create initial session
         session1 = await ctx.client.create_session()
         session_id = session1.session_id
-        
+
         # Resume session with tools using two-argument style (traditional)
-        session2 = await ctx.client.resume_session(session_id, {
-            "tools": [get_weather]
-        })
-        
+        session2 = await ctx.client.resume_session(session_id, {"tools": [get_weather]})
+
         assert session2.session_id == session_id
-        
+
         # Verify the tool works in resumed session
         answer = await session2.send_and_wait({"prompt": "What is the weather in Paris?"})
         assert answer is not None

@@ -458,14 +458,12 @@ class CopilotClient:
     ) -> CopilotSession: ...
 
     @overload
-    async def resume_session(
-        self, config: ResumeSessionConfig
-    ) -> CopilotSession: ...
+    async def resume_session(self, config: ResumeSessionConfig) -> CopilotSession: ...
 
     async def resume_session(
         self,
         session_id_or_config: Union[str, ResumeSessionConfig],
-        config: Optional[ResumeSessionConfig] = None
+        config: Optional[ResumeSessionConfig] = None,
     ) -> CopilotSession:
         """
         Resume an existing conversation session by its ID.
@@ -527,13 +525,15 @@ class CopilotClient:
             session_id = cfg.get("session_id")
             if not session_id:
                 raise ValueError(
-                    "When using single-argument style, config dict must include 'session_id' field. "
-                    "Example: resume_session({'session_id': 'my-session', 'tools': [...]}) "
-                    "or use two-argument style: resume_session('my-session', {'tools': [...]})"
+                    "When using single-argument style, config dict must include "
+                    "'session_id' field. Example: "
+                    "resume_session({'session_id': 'my-session', 'tools': [...]}) or use "
+                    "two-argument style: resume_session('my-session', {'tools': [...]})"
                 )
         else:
             raise TypeError(
-                f"First argument must be a string (session_id) or dict (config), got {type(session_id_or_config).__name__}"
+                f"First argument must be a string (session_id) or dict (config), "
+                f"got {type(session_id_or_config).__name__}"
             )
 
         if not self._client:
