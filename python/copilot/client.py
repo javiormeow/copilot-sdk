@@ -19,7 +19,7 @@ import re
 import subprocess
 import threading
 from dataclasses import asdict, is_dataclass
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 from .generated.session_events import session_event_from_dict
 from .jsonrpc import JsonRpcClient
@@ -720,7 +720,7 @@ class CopilotClient:
         """Verify that the server's protocol version matches the SDK's expected version."""
         expected_version = get_sdk_protocol_version()
         ping_result = await self.ping()
-        server_version = ping_result.get("protocolVersion")
+        server_version = ping_result.protocolVersion
 
         if server_version is None:
             raise RuntimeError(
@@ -851,7 +851,7 @@ class CopilotClient:
             if not process or not process.stdout:
                 raise RuntimeError("Process not started or stdout not available")
             while True:
-                line = cast(bytes, await loop.run_in_executor(None, process.stdout.readline))
+                line = await loop.run_in_executor(None, process.stdout.readline)
                 if not line:
                     raise RuntimeError("CLI process exited before announcing port")
 
