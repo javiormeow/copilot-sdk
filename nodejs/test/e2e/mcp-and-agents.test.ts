@@ -244,22 +244,28 @@ describe("MCP Servers and Custom Agents", async () => {
             // The response should mention the custom agent we defined
             expect(message?.data.content).toBeDefined();
             const content = message.data.content;
-            
+
             // Check that the custom agent is actually surfaced in the response
             // We look for the agent name along with its description to ensure
             // the agent information is being properly displayed, not just mentioned generically
             const contentLowercase = content.toLowerCase();
-            const hasAgentName = contentLowercase.includes("sdk-test-agent") || contentLowercase.includes("sdk test agent");
-            const hasAgentDescription = contentLowercase.includes("custom test agent") || contentLowercase.includes("configured via sdk");
-            
+            const hasAgentName =
+                contentLowercase.includes("sdk-test-agent") ||
+                contentLowercase.includes("sdk test agent");
+            const hasAgentDescription =
+                contentLowercase.includes("custom test agent") ||
+                contentLowercase.includes("configured via sdk");
+
             // At minimum, the agent name should be present
             expect(hasAgentName).toBe(true);
-            
+
             // Ideally, the description should also be present, indicating full surfacing
             // Note: This may fail if the model doesn't include full details, but
             // the agent name being present confirms basic visibility
             if (!hasAgentDescription) {
-                console.warn("Custom agent name found but description not included in response. This may indicate partial surfacing.");
+                console.warn(
+                    "Custom agent name found but description not included in response. This may indicate partial surfacing."
+                );
             }
 
             await session.destroy();
