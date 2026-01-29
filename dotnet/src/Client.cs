@@ -596,6 +596,10 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
         {
             return await rpc.InvokeWithCancellationAsync<T>(method, args, cancellationToken);
         }
+        catch (StreamJsonRpc.ConnectionLostException ex)
+        {
+            throw new IOException($"Communication error with Copilot CLI: The JSON-RPC connection with the remote party was lost before the request could complete. {ex.Message}", ex);
+        }
         catch (StreamJsonRpc.RemoteRpcException ex)
         {
             throw new IOException($"Communication error with Copilot CLI: {ex.Message}", ex);
@@ -683,18 +687,54 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
         startInfo.Environment.Remove("NODE_DEBUG");
 
         var cliProcess = new Process { StartInfo = startInfo };
-        cliProcess.Start();
+        
+        try
+        {
+            cliProcess.Start();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"Failed to start Copilot CLI process. " +
+                $"Please ensure the Copilot CLI is installed and accessible at '{cliPath}'. " +
+                $"Error: {ex.Message}", ex);
+        }
 
-        // Forward stderr to logger
+        // Check if process exited immediately (indicates a startup failure)
+        await Task.Delay(100, cancellationToken); // Small delay to detect immediate crashes
+        if (cliProcess.HasExited)
+        {
+            var exitCode = cliProcess.ExitCode;
+            var errorOutput = string.Empty;
+            try
+            {
+                errorOutput = await cliProcess.StandardError.ReadToEndAsync(cancellationToken);
+            }
+            catch { /* ignore errors reading stderr */ }
+
+            throw new InvalidOperationException(
+                $"Copilot CLI process exited immediately with code {exitCode}. " +
+                $"This may indicate the CLI is not properly installed or configured. " +
+                (string.IsNullOrEmpty(errorOutput) ? "" : $"Error output:{Environment.NewLine}{errorOutput}"));
+        }
+
+        // Forward stderr to logger (don't await - let it run in background)
         _ = Task.Run(async () =>
         {
-            while (cliProcess != null && !cliProcess.HasExited)
+            try
             {
-                var line = await cliProcess.StandardError.ReadLineAsync(cancellationToken);
-                if (line != null)
+                while (!cliProcess.HasExited)
                 {
-                    logger.LogDebug("[CLI] {Line}", line);
+                    var line = await cliProcess.StandardError.ReadLineAsync(cancellationToken);
+                    if (line != null)
+                    {
+                        logger.LogDebug("[CLI] {Line}", line);
+                    }
                 }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogDebug("Error reading CLI stderr: {Error}", ex.Message);
             }
         }, cancellationToken);
 
@@ -705,17 +745,44 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(TimeSpan.FromSeconds(30));
 
-            while (!cts.Token.IsCancellationRequested)
+            try
             {
-                var line = await cliProcess.StandardOutput.ReadLineAsync(cts.Token);
-                if (line == null) throw new Exception("CLI process exited unexpectedly");
-
-                var match = Regex.Match(line, @"listening on port (\d+)", RegexOptions.IgnoreCase);
-                if (match.Success)
+                while (!cts.Token.IsCancellationRequested)
                 {
-                    detectedLocalhostTcpPort = int.Parse(match.Groups[1].Value);
-                    break;
+                    var line = await cliProcess.StandardOutput.ReadLineAsync(cts.Token);
+                    if (line == null)
+                    {
+                        var exitCode = cliProcess.HasExited ? cliProcess.ExitCode : -1;
+                        var errorOutput = string.Empty;
+                        try
+                        {
+                            if (cliProcess.HasExited)
+                            {
+                                errorOutput = await cliProcess.StandardError.ReadToEndAsync(CancellationToken.None);
+                            }
+                        }
+                        catch { /* ignore */ }
+
+                        throw new InvalidOperationException(
+                            $"CLI process exited unexpectedly" +
+                            (cliProcess.HasExited ? $" with code {exitCode}" : "") +
+                            ". " +
+                            (string.IsNullOrEmpty(errorOutput) ? "" : $"Error output:{Environment.NewLine}{errorOutput}"));
+                    }
+
+                    var match = Regex.Match(line, @"listening on port (\d+)", RegexOptions.IgnoreCase);
+                    if (match.Success)
+                    {
+                        detectedLocalhostTcpPort = int.Parse(match.Groups[1].Value);
+                        break;
+                    }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw new TimeoutException(
+                    "Timed out waiting for CLI server to announce its port. " +
+                    "The CLI may have failed to start or is not responding.");
             }
         }
 
@@ -746,10 +813,28 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
         Stream inputStream, outputStream;
         TcpClient? tcpClient = null;
         NetworkStream? networkStream = null;
+        StderrCapture? stderrCapture = null;
 
         if (_options.UseStdio)
         {
             if (cliProcess == null) throw new InvalidOperationException("CLI process not started");
+            
+            // Check if process has already exited
+            if (cliProcess.HasExited)
+            {
+                var exitCode = cliProcess.ExitCode;
+                var errorOutput = string.Empty;
+                try
+                {
+                    errorOutput = await cliProcess.StandardError.ReadToEndAsync(cancellationToken);
+                }
+                catch { /* ignore */ }
+
+                throw new InvalidOperationException(
+                    $"Cannot connect to CLI process - it has already exited with code {exitCode}. " +
+                    (string.IsNullOrEmpty(errorOutput) ? "" : $"Error output:{Environment.NewLine}{errorOutput}"));
+            }
+
             inputStream = cliProcess.StandardOutput.BaseStream;
             outputStream = cliProcess.StandardInput.BaseStream;
         }
@@ -780,7 +865,7 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
         rpc.AddLocalRpcMethod("tool.call", handler.OnToolCall);
         rpc.AddLocalRpcMethod("permission.request", handler.OnPermissionRequest);
         rpc.StartListening();
-        return new Connection(rpc, cliProcess, tcpClient, networkStream);
+        return new Connection(rpc, cliProcess, tcpClient, networkStream, stderrCapture);
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Using happy path from https://microsoft.github.io/vs-streamjsonrpc/docs/nativeAOT.html")]
@@ -971,12 +1056,54 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
         JsonRpc rpc,
         Process? cliProcess, // Set if we created the child process
         TcpClient? tcpClient, // Set if using TCP
-        NetworkStream? networkStream) // Set if using TCP
+        NetworkStream? networkStream, // Set if using TCP
+        StderrCapture? stderrCapture = null) // Set if we capture stderr
     {
         public Process? CliProcess => cliProcess;
         public TcpClient? TcpClient => tcpClient;
         public JsonRpc Rpc => rpc;
         public NetworkStream? NetworkStream => networkStream;
+        public StderrCapture? StderrCapture => stderrCapture;
+    }
+
+    /// <summary>
+    /// Helper class to capture stderr output from the CLI process for better error diagnostics.
+    /// </summary>
+    private class StderrCapture
+    {
+        private readonly List<string> _lines = new();
+        private readonly object _lock = new();
+        private const int MaxLines = 100; // Keep last 100 lines
+
+        public void AddLine(string line)
+        {
+            lock (_lock)
+            {
+                _lines.Add(line);
+                if (_lines.Count > MaxLines)
+                {
+                    _lines.RemoveAt(0);
+                }
+            }
+        }
+
+        public string GetOutput()
+        {
+            lock (_lock)
+            {
+                return _lines.Count > 0 ? string.Join(Environment.NewLine, _lines) : string.Empty;
+            }
+        }
+
+        public string GetLastLines(int count)
+        {
+            lock (_lock)
+            {
+                var linesToTake = Math.Min(count, _lines.Count);
+                var startIndex = _lines.Count - linesToTake;
+                return linesToTake > 0 ? string.Join(Environment.NewLine, _lines.Skip(startIndex)) : string.Empty;
+            }
+        }
     }
 
     private static class ProcessArgumentEscaper
