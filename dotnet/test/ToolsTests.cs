@@ -195,7 +195,7 @@ public partial class ToolsTests(E2ETestFixture fixture, ITestOutputHelper output
 
         var session = await Client.CreateSessionAsync(new SessionConfig
         {
-            Tools = [getWeather.Function],
+            Tools = [getWeather],
             OnPermissionRequest = (request, invocation) =>
             {
                 if (request.Kind == "tool")
@@ -206,9 +206,6 @@ public partial class ToolsTests(E2ETestFixture fixture, ITestOutputHelper output
                 return Task.FromResult(new PermissionRequestResult { Kind = "approved" });
             }
         });
-
-        // Register the tool with approval setting
-        session.RegisterTools([getWeather]);
 
         await session.SendAsync(new MessageOptions
         {
@@ -236,7 +233,7 @@ public partial class ToolsTests(E2ETestFixture fixture, ITestOutputHelper output
 
         var session = await Client.CreateSessionAsync(new SessionConfig
         {
-            Tools = [deleteFile.Function],
+            Tools = [deleteFile],
             OnPermissionRequest = (request, invocation) =>
             {
                 if (request.Kind == "tool")
@@ -249,8 +246,6 @@ public partial class ToolsTests(E2ETestFixture fixture, ITestOutputHelper output
                 return Task.FromResult(new PermissionRequestResult { Kind = "approved" });
             }
         });
-
-        session.RegisterTools([deleteFile]);
 
         await session.SendAsync(new MessageOptions
         {
@@ -281,7 +276,7 @@ public partial class ToolsTests(E2ETestFixture fixture, ITestOutputHelper output
 
         var session = await Client.CreateSessionAsync(new SessionConfig
         {
-            Tools = [addNumbers.Function],
+            Tools = [addNumbers],
             OnPermissionRequest = (request, invocation) =>
             {
                 if (request.Kind == "tool")
@@ -291,8 +286,6 @@ public partial class ToolsTests(E2ETestFixture fixture, ITestOutputHelper output
                 return Task.FromResult(new PermissionRequestResult { Kind = "approved" });
             }
         });
-
-        session.RegisterTools([addNumbers]);
 
         await session.SendAsync(new MessageOptions
         {

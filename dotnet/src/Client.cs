@@ -330,10 +330,17 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
     {
         var connection = await EnsureConnectedAsync(cancellationToken);
 
+        // Extract AIFunctions from Tools (which can be either AIFunction or CopilotTool)
+        var aiFunctions = config?.Tools?
+            .Select(t => t is CopilotTool ct ? ct.Function : t as AIFunction)
+            .Where(f => f != null)
+            .Cast<AIFunction>()
+            .ToList();
+
         var request = new CreateSessionRequest(
             config?.Model,
             config?.SessionId,
-            config?.Tools?.Select(ToolDefinition.FromAIFunction).ToList(),
+            aiFunctions?.Select(ToolDefinition.FromAIFunction).ToList(),
             config?.SystemMessage,
             config?.AvailableTools,
             config?.ExcludedTools,
@@ -351,7 +358,25 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
             connection.Rpc, "session.create", [request], cancellationToken);
 
         var session = new CopilotSession(response.SessionId, connection.Rpc, response.WorkspacePath);
-        session.RegisterTools(config?.Tools ?? []);
+        
+        // Register tools with their approval settings
+        if (config?.Tools != null)
+        {
+            var copilotTools = new List<CopilotTool>();
+            foreach (var tool in config.Tools)
+            {
+                if (tool is CopilotTool ct)
+                {
+                    copilotTools.Add(ct);
+                }
+                else if (tool is AIFunction af)
+                {
+                    copilotTools.Add(new CopilotTool { Function = af, RequiresApproval = false });
+                }
+            }
+            session.RegisterTools(copilotTools);
+        }
+        
         if (config?.OnPermissionRequest != null)
         {
             session.RegisterPermissionHandler(config.OnPermissionRequest);
@@ -393,9 +418,16 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
     {
         var connection = await EnsureConnectedAsync(cancellationToken);
 
+        // Extract AIFunctions from Tools (which can be either AIFunction or CopilotTool)
+        var aiFunctions = config?.Tools?
+            .Select(t => t is CopilotTool ct ? ct.Function : t as AIFunction)
+            .Where(f => f != null)
+            .Cast<AIFunction>()
+            .ToList();
+
         var request = new ResumeSessionRequest(
             sessionId,
-            config?.Tools?.Select(ToolDefinition.FromAIFunction).ToList(),
+            aiFunctions?.Select(ToolDefinition.FromAIFunction).ToList(),
             config?.Provider,
             config?.OnPermissionRequest != null ? true : null,
             config?.Streaming == true ? true : null,
@@ -408,7 +440,25 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
             connection.Rpc, "session.resume", [request], cancellationToken);
 
         var session = new CopilotSession(response.SessionId, connection.Rpc, response.WorkspacePath);
-        session.RegisterTools(config?.Tools ?? []);
+        
+        // Register tools with their approval settings
+        if (config?.Tools != null)
+        {
+            var copilotTools = new List<CopilotTool>();
+            foreach (var tool in config.Tools)
+            {
+                if (tool is CopilotTool ct)
+                {
+                    copilotTools.Add(ct);
+                }
+                else if (tool is AIFunction af)
+                {
+                    copilotTools.Add(new CopilotTool { Function = af, RequiresApproval = false });
+                }
+            }
+            session.RegisterTools(copilotTools);
+        }
+        
         if (config?.OnPermissionRequest != null)
         {
             session.RegisterPermissionHandler(config.OnPermissionRequest);
@@ -877,13 +927,17 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
             {
                 try
                 {
-                    var permissionResult = await session.HandlePermissionRequestAsync(
-                        JsonSerializer.SerializeToElement(new
+                    // Create permission request as JsonElement manually
+                    var permissionRequestJson = $$"""
                         {
-                            kind = "tool",
-                            toolCallId,
-                            toolName
-                        }));
+                            "kind": "tool",
+                            "toolCallId": "{{toolCallId}}",
+                            "toolName": "{{toolName}}"
+                        }
+                        """;
+                    var permissionRequestElement = JsonDocument.Parse(permissionRequestJson).RootElement;
+
+                    var permissionResult = await session.HandlePermissionRequestAsync(permissionRequestElement);
 
                     if (permissionResult.Kind != "approved")
                     {

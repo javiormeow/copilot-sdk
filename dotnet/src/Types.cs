@@ -366,7 +366,12 @@ public class SessionConfig
     /// </summary>
     public string? ConfigDir { get; set; }
 
-    public ICollection<AIFunction>? Tools { get; set; }
+    /// <summary>
+    /// Tools that can be invoked by the assistant.
+    /// Can be either AIFunction instances or CopilotTool instances.
+    /// Use CopilotTool to specify RequiresApproval for permission handling.
+    /// </summary>
+    public ICollection<object>? Tools { get; set; }
     public SystemMessageConfig? SystemMessage { get; set; }
     public List<string>? AvailableTools { get; set; }
     public List<string>? ExcludedTools { get; set; }
@@ -415,7 +420,12 @@ public class SessionConfig
 
 public class ResumeSessionConfig
 {
-    public ICollection<AIFunction>? Tools { get; set; }
+    /// <summary>
+    /// Tools that can be invoked by the assistant.
+    /// Can be either AIFunction instances or CopilotTool instances.
+    /// Use CopilotTool to specify RequiresApproval for permission handling.
+    /// </summary>
+    public ICollection<object>? Tools { get; set; }
     public ProviderConfig? Provider { get; set; }
 
     /// <summary>
