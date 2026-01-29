@@ -872,6 +872,41 @@ public partial class CopilotClient : IDisposable, IAsyncDisposable
                 });
             }
 
+            // Check if tool requires approval
+            if (session.ToolRequiresApproval(toolName))
+            {
+                try
+                {
+                    var permissionResult = await session.HandlePermissionRequestAsync(
+                        JsonSerializer.SerializeToElement(new
+                        {
+                            kind = "tool",
+                            toolCallId,
+                            toolName
+                        }));
+
+                    if (permissionResult.Kind != "approved")
+                    {
+                        return new ToolCallResponse(new ToolResultObject
+                        {
+                            TextResultForLlm = permissionResult.Kind == "denied-interactively-by-user"
+                                ? "Tool execution was denied by user."
+                                : "Tool execution was denied.",
+                            ResultType = "denied"
+                        });
+                    }
+                }
+                catch
+                {
+                    // If permission handler fails or is not configured, deny the tool execution
+                    return new ToolCallResponse(new ToolResultObject
+                    {
+                        TextResultForLlm = "Tool execution requires permission but no permission handler is configured.",
+                        ResultType = "denied"
+                    });
+                }
+            }
+
             try
             {
                 var invocation = new ToolInvocation
