@@ -430,19 +430,72 @@ await session.SendAsync(new MessageOptions
 
 ### Bring Your Own Key (BYOK)
 
-Use a custom API provider:
+The SDK supports custom OpenAI-compatible API providers (BYOK - Bring Your Own Key), including local providers like Ollama. When using a custom provider, you must specify the `Model` explicitly.
+
+**ProviderConfig fields:**
+
+- `Type` (string): Provider type - `"openai"`, `"azure"`, or `"anthropic"` (default: `"openai"`)
+- `BaseUrl` (string): API endpoint URL (required)
+- `ApiKey` (string): API key (optional for local providers like Ollama)
+- `BearerToken` (string): Bearer token for authentication (takes precedence over `ApiKey`)
+- `WireApi` (string): API format for OpenAI/Azure - `"completions"` or `"responses"` (default: `"completions"`)
+- `Azure` (AzureProviderOptions): Azure-specific options with `ApiVersion` (default: `"2024-10-21"`)
+
+**Example with Ollama:**
 
 ```csharp
 var session = await client.CreateSessionAsync(new SessionConfig
 {
+    Model = "deepseek-coder-v2:16b",  // Required when using custom provider
     Provider = new ProviderConfig
     {
         Type = "openai",
-        BaseUrl = "https://api.openai.com/v1",
-        ApiKey = "your-api-key"
+        BaseUrl = "http://localhost:11434/v1",  // Ollama endpoint
+        // ApiKey not required for Ollama
+    }
+});
+
+await session.SendAsync(new MessageOptions { Prompt = "Hello!" });
+```
+
+**Example with custom OpenAI-compatible API:**
+
+```csharp
+var session = await client.CreateSessionAsync(new SessionConfig
+{
+    Model = "gpt-4",
+    Provider = new ProviderConfig
+    {
+        Type = "openai",
+        BaseUrl = "https://my-api.example.com/v1",
+        ApiKey = Environment.GetEnvironmentVariable("MY_API_KEY")
     }
 });
 ```
+
+**Example with Azure OpenAI:**
+
+```csharp
+var session = await client.CreateSessionAsync(new SessionConfig
+{
+    Model = "gpt-4",
+    Provider = new ProviderConfig
+    {
+        Type = "azure",  // Must be "azure" for Azure endpoints, NOT "openai"
+        BaseUrl = "https://my-resource.openai.azure.com",  // Just the host, no path
+        ApiKey = Environment.GetEnvironmentVariable("AZURE_OPENAI_KEY"),
+        Azure = new AzureProviderOptions
+        {
+            ApiVersion = "2024-10-21"
+        }
+    }
+});
+```
+
+> **Important notes:**
+> - When using a custom provider, the `Model` parameter is **required**. The SDK will throw an error if no model is specified.
+> - For Azure OpenAI endpoints (`*.openai.azure.com`), you **must** use `Type = "azure"`, not `Type = "openai"`.
+> - The `BaseUrl` should be just the host (e.g., `https://my-resource.openai.azure.com`). Do **not** include `/openai/v1` in the URL - the SDK handles path construction automatically.
 
 ## Error Handling
 
