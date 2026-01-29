@@ -245,14 +245,19 @@ describe("MCP Servers and Custom Agents", async () => {
             expect(message?.data.content).toBeDefined();
             const content = message!.data.content || "";
             
-            // Check that the custom agent is mentioned (either by name or in the list)
-            // The CLI should include custom agents in the task tool description
-            expect(
-                content.toLowerCase().includes("test-agent") ||
-                content.toLowerCase().includes("test agent") ||
-                content.toLowerCase().includes("user-defined") ||
-                content.toLowerCase().includes("user-provided")
-            ).toBe(true);
+            // Check that the custom agent name is mentioned AND
+            // that it's mentioned in a positive context (available/configured)
+            // This ensures the agent is actually surfaced, not just mentioned as missing
+            const lowerContent = content.toLowerCase();
+            const hasAgentName = lowerContent.includes("test-agent") || lowerContent.includes("test agent");
+            const hasPositiveIndicator = 
+                lowerContent.includes("available") ||
+                lowerContent.includes("configured") ||
+                lowerContent.includes("following") ||
+                lowerContent.includes("include");
+            
+            expect(hasAgentName).toBe(true);
+            expect(hasPositiveIndicator).toBe(true);
 
             await session.destroy();
         });
