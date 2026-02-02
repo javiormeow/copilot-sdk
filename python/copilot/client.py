@@ -517,9 +517,13 @@ class CopilotClient:
         conversation history. The session must have been previously created
         and not deleted.
 
+        You can optionally change the model when resuming a session without
+        losing the conversation context.
+
         Args:
             session_id: The ID of the session to resume.
-            config: Optional configuration for the resumed session.
+            config: Optional configuration for the resumed session. Can include
+                a different model to switch to while maintaining context.
 
         Returns:
             A :class:`CopilotSession` instance for the resumed session.
@@ -534,6 +538,11 @@ class CopilotClient:
             >>> # Resume with new tools
             >>> session = await client.resume_session("session-123", {
             ...     "tools": [my_new_tool]
+            ... })
+            >>>
+            >>> # Resume with a different model
+            >>> session = await client.resume_session("session-123", {
+            ...     "model": "claude-sonnet-4.5"
             ... })
         """
         if not self._client:
@@ -557,6 +566,8 @@ class CopilotClient:
                 tool_defs.append(definition)
 
         payload: dict[str, Any] = {"sessionId": session_id}
+        if cfg.get("model"):
+            payload["model"] = cfg["model"]
         if cfg.get("reasoning_effort"):
             payload["reasoningEffort"] = cfg["reasoning_effort"]
         if tool_defs:

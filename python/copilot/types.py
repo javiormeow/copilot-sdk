@@ -492,6 +492,9 @@ class ProviderConfig(TypedDict, total=False):
 class ResumeSessionConfig(TypedDict, total=False):
     """Configuration for resuming a session"""
 
+    # Model to use for this session. When specified during resume,
+    # changes the model for the existing session without losing context.
+    model: Literal["gpt-5", "claude-sonnet-4", "claude-sonnet-4.5", "claude-haiku-4.5"]
     tools: list[Tool]
     provider: ProviderConfig
     # Reasoning effort level for models that support it.
