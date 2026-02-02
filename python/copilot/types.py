@@ -493,6 +493,7 @@ class ResumeSessionConfig(TypedDict, total=False):
     """Configuration for resuming a session"""
 
     tools: list[Tool]
+    system_message: SystemMessageConfig  # System message configuration
     provider: ProviderConfig
     # Reasoning effort level for models that support it.
     reasoning_effort: ReasoningEffort

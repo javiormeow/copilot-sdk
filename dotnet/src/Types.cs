@@ -771,6 +771,12 @@ public class SessionConfig
 public class ResumeSessionConfig
 {
     public ICollection<AIFunction>? Tools { get; set; }
+
+    /// <summary>
+    /// System message configuration for the session.
+    /// </summary>
+    public SystemMessageConfig? SystemMessage { get; set; }
+
     public ProviderConfig? Provider { get; set; }
 
     /// <summary>

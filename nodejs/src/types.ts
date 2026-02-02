@@ -731,6 +731,7 @@ export interface SessionConfig {
 export type ResumeSessionConfig = Pick<
     SessionConfig,
     | "tools"
+    | "systemMessage"
     | "provider"
     | "streaming"
     | "reasoningEffort"

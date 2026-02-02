@@ -401,6 +401,8 @@ type ToolResult struct {
 type ResumeSessionConfig struct {
 	// Tools exposes caller-implemented tools to the CLI
 	Tools []Tool
+	// SystemMessage configures the system message for the session
+	SystemMessage *SystemMessageConfig
 	// Provider configures a custom model provider
 	Provider *ProviderConfig
 	// ReasoningEffort level for models that support it.
