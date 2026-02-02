@@ -191,12 +191,17 @@ class TestSessions:
         assert start_event1.data.selected_model == "fake-test-model"
 
         # Resume with a different model (should not raise an error)
+        # The model parameter is passed to the CLI which should accept it
         session2 = await ctx.client.resume_session(session_id, {"model": "fake-test-model-2"})
         assert session2.session_id == session_id
 
         # Verify session can still be used
         messages2 = await session2.get_messages()
         assert len(messages2) > 0
+
+        # Note: We verify that the model parameter is accepted and doesn't cause errors.
+        # Full verification of model change would require sending a message and checking
+        # that the new model is used, but that would require the full test harness setup.
 
     async def test_should_list_sessions(self, ctx: E2ETestContext):
         import asyncio
