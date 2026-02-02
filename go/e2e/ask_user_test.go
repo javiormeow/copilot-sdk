@@ -9,7 +9,7 @@ import (
 	"github.com/github/copilot-sdk/go/e2e/testharness"
 )
 
-func TestAskUser(t *testing.T) {
+func TestAsk_User(t *testing.T) {
 	ctx := testharness.NewTestContext(t)
 	client := ctx.NewClient()
 	t.Cleanup(func() { client.ForceStop() })
