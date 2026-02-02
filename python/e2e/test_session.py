@@ -184,7 +184,7 @@ class TestSessions:
         # Create initial session with fake-test-model
         session1 = await ctx.client.create_session({"model": "fake-test-model"})
         session_id = session1.session_id
-        
+
         # Verify initial model in session.start event
         messages1 = await session1.get_messages()
         start_event1 = next(m for m in messages1 if m.type.value == "session.start")
@@ -193,7 +193,7 @@ class TestSessions:
         # Resume with a different model (should not raise an error)
         session2 = await ctx.client.resume_session(session_id, {"model": "fake-test-model-2"})
         assert session2.session_id == session_id
-        
+
         # Verify session can still be used
         messages2 = await session2.get_messages()
         assert len(messages2) > 0
