@@ -63,9 +63,8 @@ public delegate Task<ErrorOccurredHookOutput?> ErrorOccurredHandler(
 | `timestamp` | number | Unix timestamp when the error occurred |
 | `cwd` | string | Current working directory |
 | `error` | string | Error message |
-| `errorType` | string | Type/category of error |
-| `stack` | string | Stack trace (if available) |
-| `context` | object | Additional error context |
+| `errorContext` | string | Where the error occurred: `"model_call"`, `"tool_execution"`, `"system"`, or `"user_input"` |
+| `recoverable` | boolean | Whether the error can potentially be recovered from |
 
 ## Output
 
@@ -73,9 +72,10 @@ Return `null` or `undefined` to use default error handling. Otherwise, return an
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `additionalContext` | string | Context to add to help recover |
-| `suppressError` | boolean | If true, don't show error to user |
-| `modifiedMessage` | string | Custom error message to display |
+| `suppressOutput` | boolean | If true, don't show error output to user |
+| `errorHandling` | string | How to handle: `"retry"`, `"skip"`, or `"abort"` |
+| `retryCount` | number | Number of times to retry (if errorHandling is `"retry"`) |
+| `userNotification` | string | Custom message to show the user |
 
 ## Examples
 
@@ -89,10 +89,8 @@ const session = await client.createSession({
   hooks: {
     onErrorOccurred: async (input, invocation) => {
       console.error(`[${invocation.sessionId}] Error: ${input.error}`);
-      console.error(`  Type: ${input.errorType}`);
-      if (input.stack) {
-        console.error(`  Stack: ${input.stack}`);
-      }
+      console.error(`  Context: ${input.errorContext}`);
+      console.error(`  Recoverable: ${input.recoverable}`);
       return null;
     },
   },
@@ -107,9 +105,8 @@ const session = await client.createSession({
 ```python
 async def on_error_occurred(input_data, invocation):
     print(f"[{invocation['session_id']}] Error: {input_data['error']}")
-    print(f"  Type: {input_data['errorType']}")
-    if input_data.get("stack"):
-        print(f"  Stack: {input_data['stack']}")
+    print(f"  Context: {input_data['error_context']}")
+    print(f"  Recoverable: {input_data['recoverable']}")
     return None
 
 session = await client.create_session({
@@ -127,10 +124,8 @@ session, _ := client.CreateSession(ctx, copilot.SessionConfig{
     Hooks: &copilot.SessionHooks{
         OnErrorOccurred: func(input copilot.ErrorOccurredHookInput, inv copilot.HookInvocation) (*copilot.ErrorOccurredHookOutput, error) {
             fmt.Printf("[%s] Error: %s\n", inv.SessionID, input.Error)
-            fmt.Printf("  Type: %s\n", input.ErrorType)
-            if input.Stack != "" {
-                fmt.Printf("  Stack: %s\n", input.Stack)
-            }
+            fmt.Printf("  Context: %s\n", input.ErrorContext)
+            fmt.Printf("  Recoverable: %v\n", input.Recoverable)
             return nil, nil
         },
     },

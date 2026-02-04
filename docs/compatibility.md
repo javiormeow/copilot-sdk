@@ -146,8 +146,11 @@ const session = await client.createSession({
 Instead of `/usage`, subscribe to usage events:
 
 ```typescript
-session.on("assistant.turn_end", (event) => {
-  console.log("Tokens used:", event.data.usage);
+session.on("assistant.usage", (event) => {
+  console.log("Tokens used:", {
+    input: event.data.inputTokens,
+    output: event.data.outputTokens,
+  });
 });
 ```
 

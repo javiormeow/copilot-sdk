@@ -384,12 +384,16 @@ const session = await client.createSession({
 #### Log Session Summary
 
 ```typescript
-const sessionData: Record<string, { prompts: number; tools: number }> = {};
+const sessionData: Record<string, { prompts: number; tools: number; startTime: number }> = {};
 
 const session = await client.createSession({
   hooks: {
-    onSessionStart: async (_, invocation) => {
-      sessionData[invocation.sessionId] = { prompts: 0, tools: 0 };
+    onSessionStart: async (input, invocation) => {
+      sessionData[invocation.sessionId] = { 
+        prompts: 0, 
+        tools: 0, 
+        startTime: input.timestamp 
+      };
       return null;
     },
     onUserPromptSubmitted: async (_, invocation) => {

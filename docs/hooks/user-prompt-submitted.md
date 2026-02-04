@@ -72,8 +72,7 @@ Return `null` or `undefined` to use the prompt unchanged. Otherwise, return an o
 |-------|------|-------------|
 | `modifiedPrompt` | string | Modified prompt to use instead of original |
 | `additionalContext` | string | Extra context added to the conversation |
-| `reject` | boolean | If true, reject the prompt entirely |
-| `rejectReason` | string | Explanation shown when prompt is rejected |
+| `suppressOutput` | boolean | If true, suppress the assistant's response output |
 
 ## Examples
 
