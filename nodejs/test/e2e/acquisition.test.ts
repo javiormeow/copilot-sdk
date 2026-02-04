@@ -13,7 +13,10 @@ describe("CLI Acquisition E2E", () => {
     let testDir: string;
 
     beforeEach(() => {
-        testDir = join(tmpdir(), `copilot-acquisition-e2e-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+        testDir = join(
+            tmpdir(),
+            `copilot-acquisition-e2e-${Date.now()}-${Math.random().toString(36).slice(2)}`
+        );
         mkdirSync(testDir, { recursive: true });
     });
 
@@ -47,7 +50,7 @@ describe("CLI Acquisition E2E", () => {
 
             // Verify CLI was downloaded
             const entries = readdirSync(testDir);
-            expect(entries.some(e => e.startsWith("copilot-"))).toBe(true);
+            expect(entries.some((e) => e.startsWith("copilot-"))).toBe(true);
 
             // Verify progress was reported (at least some bytes downloaded)
             expect(progressUpdates.length).toBeGreaterThan(0);
@@ -103,7 +106,9 @@ describe("CLI Acquisition E2E", () => {
             logLevel: "error",
         });
 
-        await expect(client.start()).rejects.toThrow("reserved for the global Copilot CLI installation");
+        await expect(client.start()).rejects.toThrow(
+            "reserved for the global Copilot CLI installation"
+        );
     });
 
     it("should clean up old versions after acquisition", async () => {

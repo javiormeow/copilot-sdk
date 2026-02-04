@@ -155,11 +155,15 @@ export class CopilotClient {
         }
 
         if (options.cliPath && options.acquisition) {
-            throw new Error("cliPath is mutually exclusive with acquisition (acquisition auto-determines the CLI path)");
+            throw new Error(
+                "cliPath is mutually exclusive with acquisition (acquisition auto-determines the CLI path)"
+            );
         }
 
         if (options.cliUrl && options.acquisition) {
-            throw new Error("cliUrl is mutually exclusive with acquisition (external server doesn't need local CLI)");
+            throw new Error(
+                "cliUrl is mutually exclusive with acquisition (external server doesn't need local CLI)"
+            );
         }
 
         // Validate auth options with external server

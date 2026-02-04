@@ -2,7 +2,15 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------------------------------------------*/
 
-import { createWriteStream, existsSync, mkdirSync, readdirSync, rmSync, chmodSync, copyFileSync } from "node:fs";
+import {
+    createWriteStream,
+    existsSync,
+    mkdirSync,
+    readdirSync,
+    rmSync,
+    chmodSync,
+    copyFileSync,
+} from "node:fs";
 import { rename, rm } from "node:fs/promises";
 import { homedir, platform, arch, tmpdir } from "node:os";
 import { join, dirname, resolve } from "node:path";
@@ -164,7 +172,10 @@ async function downloadCli(
 ): Promise<string> {
     const url = getDownloadUrl(version);
     const versionDir = join(downloadDir, `copilot-${version}`);
-    const tempDir = join(tmpdir(), `copilot-download-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    const tempDir = join(
+        tmpdir(),
+        `copilot-download-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    );
 
     mkdirSync(downloadDir, { recursive: true });
     mkdirSync(tempDir, { recursive: true });
@@ -173,7 +184,9 @@ async function downloadCli(
         const response = await fetch(url, { redirect: "follow" });
 
         if (!response.ok) {
-            throw new Error(`Failed to download CLI v${version}: ${response.status} ${response.statusText}`);
+            throw new Error(
+                `Failed to download CLI v${version}: ${response.status} ${response.statusText}`
+            );
         }
 
         const contentLength = parseInt(response.headers.get("content-length") || "0", 10);
@@ -254,7 +267,10 @@ async function extractArchive(archivePath: string, destDir: string): Promise<voi
         proc.on("error", reject);
         proc.on("exit", (code) => {
             if (code === 0) resolve();
-            else reject(new Error(`Archive extraction failed for ${archivePath} (exit code ${code})`));
+            else
+                reject(
+                    new Error(`Archive extraction failed for ${archivePath} (exit code ${code})`)
+                );
         });
     });
 }

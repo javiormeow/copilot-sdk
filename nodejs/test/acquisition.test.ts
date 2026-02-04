@@ -12,7 +12,10 @@ describe("acquisition", () => {
     let testDir: string;
 
     beforeEach(() => {
-        testDir = join(tmpdir(), `copilot-acquisition-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+        testDir = join(
+            tmpdir(),
+            `copilot-acquisition-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+        );
         mkdirSync(testDir, { recursive: true });
     });
 
