@@ -59,7 +59,7 @@ jobs:
         run: npm run lint
 
       - name: Typecheck SDK
-        run: npm run typecheck
+        run: npm run build && npm run typecheck
 
       - name: Install test harness dependencies
         working-directory: ./test/harness
