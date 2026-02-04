@@ -259,10 +259,22 @@ async function downloadCli(
     }
 }
 
-// tar is built-in on Windows 10+, macOS, and Linux and handles .zip and .tar.gz
+// tar is built-in on macOS and Linux. Windows uses PowerShell Expand-Archive for .zip files.
 async function extractArchive(archivePath: string, destDir: string): Promise<void> {
     return new Promise((resolve, reject) => {
-        const proc = spawn("tar", ["-xf", archivePath, "-C", destDir], { stdio: "pipe" });
+        const isWindows = platform() === "win32";
+
+        const proc = isWindows
+            ? spawn(
+                  "powershell",
+                  [
+                      "-NoProfile",
+                      "-Command",
+                      `$ProgressPreference='SilentlyContinue'; Expand-Archive -Path '${archivePath}' -DestinationPath '${destDir}' -Force`,
+                  ],
+                  { stdio: "pipe" }
+              )
+            : spawn("tar", ["-xf", archivePath, "-C", destDir], { stdio: "pipe" });
 
         let stderr = "";
         proc.stderr?.on("data", (data) => {
