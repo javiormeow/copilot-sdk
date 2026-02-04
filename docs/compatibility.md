@@ -159,13 +159,13 @@ Instead of `/compact`, configure automatic compaction:
 const session = await client.createSession({
   infiniteSessions: {
     enabled: true,
-    compactionThreshold: {
-      background: 80000,  // Compact in background at 80k tokens
-      blocking: 100000,   // Block and compact at 100k tokens
-    },
+    backgroundCompactionThreshold: 0.80,  // Start background compaction at 80% context utilization
+    bufferExhaustionThreshold: 0.95,      // Block and compact at 95% context utilization
   },
 });
 ```
+
+> **Note:** Thresholds are context utilization ratios (0.0-1.0), not absolute token counts.
 
 ## Protocol Limitations
 
