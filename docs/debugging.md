@@ -28,11 +28,6 @@ const client = new CopilotClient({
 });
 ```
 
-You can also set the environment variable:
-```bash
-COPILOT_LOG_LEVEL=debug node your-app.js
-```
-
 </details>
 
 <details>
@@ -42,11 +37,6 @@ COPILOT_LOG_LEVEL=debug node your-app.js
 from copilot import CopilotClient
 
 client = CopilotClient(log_level="debug")
-```
-
-Or via environment variable:
-```bash
-COPILOT_LOG_LEVEL=debug python your_app.py
 ```
 
 </details>
@@ -60,11 +50,6 @@ import copilot "github.com/github/copilot-sdk/go"
 client, err := copilot.NewClient(copilot.ClientOptions{
     LogLevel: "debug",
 })
-```
-
-Or via environment variable:
-```bash
-COPILOT_LOG_LEVEL=debug go run main.go
 ```
 
 </details>
@@ -111,8 +96,12 @@ const client = new CopilotClient({
 <summary><strong>Python</strong></summary>
 
 ```python
-client = CopilotClient(cli_args=["--log-dir", "/path/to/logs"])
+# The Python SDK does not currently support passing extra CLI arguments.
+# Logs are written to the default location or can be configured via
+# the CLI when running in server mode.
 ```
+
+> **Note:** Python SDK logging configuration is limited. For advanced logging, run the CLI manually with `--log-dir` and connect via `cli_url`.
 
 </details>
 
@@ -120,10 +109,9 @@ client = CopilotClient(cli_args=["--log-dir", "/path/to/logs"])
 <summary><strong>Go</strong></summary>
 
 ```go
-// Pass via environment or CLI args
-client, err := copilot.NewClient(copilot.ClientOptions{
-    // CLI args not directly supported; use environment variables
-})
+// The Go SDK does not currently support passing extra CLI arguments.
+// For custom log directories, run the CLI manually with --log-dir
+// and connect via CLIUrl option.
 ```
 
 </details>

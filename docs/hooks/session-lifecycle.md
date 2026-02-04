@@ -67,6 +67,7 @@ public delegate Task<SessionStartHookOutput?> SessionStartHandler(
 | `timestamp` | number | Unix timestamp when the hook was triggered |
 | `cwd` | string | Current working directory |
 | `source` | `"startup"` \| `"resume"` \| `"new"` | How the session was started |
+| `initialPrompt` | string \| undefined | The initial prompt if provided |
 
 ### Output
 
@@ -242,6 +243,8 @@ public delegate Task<SessionEndHookOutput?> SessionEndHandler(
 | `timestamp` | number | Unix timestamp when the hook was triggered |
 | `cwd` | string | Current working directory |
 | `reason` | string | Why the session ended (see below) |
+| `finalMessage` | string \| undefined | The last message from the session |
+| `error` | string \| undefined | Error message if session ended due to error |
 
 #### End Reasons
 
@@ -257,7 +260,9 @@ public delegate Task<SessionEndHookOutput?> SessionEndHandler(
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `additionalContext` | string | Context to add (rarely used) |
+| `suppressOutput` | boolean | Suppress the final session output |
+| `cleanupActions` | string[] | List of cleanup actions to perform |
+| `sessionSummary` | string | Summary of the session for logging/analytics |
 
 ### Examples
 
