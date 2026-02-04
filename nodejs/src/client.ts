@@ -21,6 +21,7 @@ import {
 } from "vscode-jsonrpc/node.js";
 import { getSdkProtocolVersion } from "./sdkProtocolVersion.js";
 import { CopilotSession } from "./session.js";
+import { acquireCli, type AcquisitionOptions } from "./acquisition.js";
 import type {
     ConnectionState,
     CopilotClientOptions,
@@ -109,11 +110,12 @@ export class CopilotClient {
     private state: ConnectionState = "disconnected";
     private sessions: Map<string, CopilotSession> = new Map();
     private options: Required<
-        Omit<CopilotClientOptions, "cliUrl" | "githubToken" | "useLoggedInUser">
+        Omit<CopilotClientOptions, "cliUrl" | "githubToken" | "useLoggedInUser" | "acquisition">
     > & {
         cliUrl?: string;
         githubToken?: string;
         useLoggedInUser?: boolean;
+        acquisition?: AcquisitionOptions;
     };
     private isExternalServer: boolean = false;
     private forceStopping: boolean = false;
@@ -152,6 +154,14 @@ export class CopilotClient {
             throw new Error("cliUrl is mutually exclusive with useStdio and cliPath");
         }
 
+        if (options.cliPath && options.acquisition) {
+            throw new Error("cliPath is mutually exclusive with acquisition (acquisition auto-determines the CLI path)");
+        }
+
+        if (options.cliUrl && options.acquisition) {
+            throw new Error("cliUrl is mutually exclusive with acquisition (external server doesn't need local CLI)");
+        }
+
         // Validate auth options with external server
         if (options.cliUrl && (options.githubToken || options.useLoggedInUser !== undefined)) {
             throw new Error(
@@ -181,6 +191,7 @@ export class CopilotClient {
             githubToken: options.githubToken,
             // Default useLoggedInUser to false when githubToken is provided, otherwise true
             useLoggedInUser: options.useLoggedInUser ?? (options.githubToken ? false : true),
+            acquisition: options.acquisition,
         };
     }
 
@@ -241,6 +252,12 @@ export class CopilotClient {
         this.state = "connecting";
 
         try {
+            // Run CLI acquisition if configured
+            if (this.options.acquisition) {
+                const cliPath = await acquireCli(this.options.acquisition);
+                this.options.cliPath = cliPath;
+            }
+
             // Only start CLI server process if not connecting to external server
             if (!this.isExternalServer) {
                 await this.startCLIServer();

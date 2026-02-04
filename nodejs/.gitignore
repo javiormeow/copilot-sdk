@@ -133,5 +133,8 @@ dist
 dist/
 build/
 
+# Generated version constants (regenerated at build time)
+src/generated/
+
 # macOS
 .DS_Store

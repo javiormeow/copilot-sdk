@@ -10,9 +10,8 @@
 import type { SessionEvent as GeneratedSessionEvent } from "./generated/session-events.js";
 export type SessionEvent = GeneratedSessionEvent;
 
-/**
- * Options for creating a CopilotClient
- */
+import type { AcquisitionOptions } from "./acquisition.js";
+
 export interface CopilotClientOptions {
     /**
      * Path to the Copilot CLI executable
@@ -89,6 +88,13 @@ export interface CopilotClientOptions {
      * @default true (but defaults to false when githubToken is provided)
      */
     useLoggedInUser?: boolean;
+
+    /**
+     * Acquisition options for automatically downloading the Copilot CLI.
+     * When provided, the SDK will manage CLI downloads to the specified directory.
+     * Mutually exclusive with cliPath and cliUrl.
+     */
+    acquisition?: AcquisitionOptions;
 }
 
 /**

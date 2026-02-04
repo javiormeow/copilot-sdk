@@ -55,9 +55,10 @@ new CopilotClient(options?: CopilotClientOptions)
 
 **Options:**
 
-- `cliPath?: string` - Path to CLI executable (default: "copilot" from PATH)
+- `cliPath?: string` - Path to CLI executable (default: "copilot" from PATH). Mutually exclusive with `acquisition`.
 - `cliArgs?: string[]` - Extra arguments prepended before SDK-managed flags (e.g. `["./dist-cli/index.js"]` when using `node`)
-- `cliUrl?: string` - URL of existing CLI server to connect to (e.g., `"localhost:8080"`, `"http://127.0.0.1:9000"`, or just `"8080"`). When provided, the client will not spawn a CLI process.
+- `cliUrl?: string` - URL of existing CLI server to connect to (e.g., `"localhost:8080"`, `"http://127.0.0.1:9000"`, or just `"8080"`). When provided, the client will not spawn a CLI process. Mutually exclusive with `acquisition`.
+- `acquisition?: AcquisitionOptions` - Auto-download CLI if not present. See [CLI Acquisition](#cli-acquisition). Mutually exclusive with `cliPath` and `cliUrl`.
 - `port?: number` - Server port (default: 0 for random)
 - `useStdio?: boolean` - Use stdio transport instead of TCP (default: true)
 - `logLevel?: string` - Log level (default: "info")
@@ -645,7 +646,63 @@ try {
 ## Requirements
 
 - Node.js >= 18.0.0
-- GitHub Copilot CLI installed and in PATH (or provide custom `cliPath`)
+- GitHub Copilot CLI installed and in PATH, or:
+  - Provide a custom `cliPath`, or
+  - Use `acquisition` to auto-download the CLI (see below)
+
+## CLI Acquisition
+
+The SDK can automatically download and manage the Copilot CLI for you. This is useful when you can't rely on the CLI being pre-installed.
+
+```typescript
+const client = new CopilotClient({
+    acquisition: {
+        downloadDir: "~/.myapp/copilot-cli", // Where to store CLI versions
+    },
+});
+
+await client.start(); // Downloads CLI if needed, then starts
+```
+
+### How it works
+
+1. **Check existing downloads**: Looks for any CLI version in `downloadDir` that is both >= your `minVersion` (if specified) and protocol-compatible with this SDK.
+
+2. **If a suitable version exists**: Uses the highest compatible version. No download needed.
+
+3. **If no suitable version exists**: Downloads the CLI version this SDK was built for.
+
+This means SDK upgrades don't force re-downloads — your existing CLI is reused as long as it still works.
+
+### Options
+
+```typescript
+interface AcquisitionOptions {
+    // Required: Directory for CLI downloads. Should be app-specific.
+    downloadDir: string;
+
+    // Optional: Minimum CLI version required (e.g., "0.0.405").
+    // If your existing version is lower, a new version will be downloaded.
+    minVersion?: string;
+
+    // Optional: Progress callback for download updates.
+    onProgress?: (progress: { bytesDownloaded: number; totalBytes: number }) => void;
+}
+```
+
+### Example with progress reporting
+
+```typescript
+const client = new CopilotClient({
+    acquisition: {
+        downloadDir: path.join(os.homedir(), ".myapp", "copilot-cli"),
+        onProgress: ({ bytesDownloaded, totalBytes }) => {
+            const pct = totalBytes > 0 ? Math.round((bytesDownloaded / totalBytes) * 100) : 0;
+            console.log(`Downloading CLI: ${pct}%`);
+        },
+    },
+});
+```
 
 ## License
 

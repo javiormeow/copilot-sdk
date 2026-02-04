@@ -16,7 +16,8 @@
   },
   "type": "module",
   "scripts": {
-    "clean": "rimraf --glob dist *.tgz",
+    "clean": "rimraf --glob dist *.tgz src/generated",
+    "prebuild": "tsx scripts/generate-versions.ts",
     "build": "tsx esbuild-copilotsdk-nodejs.ts",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -41,11 +42,13 @@
   "license": "MIT",
   "dependencies": {
     "@github/copilot": "^0.0.402",
+    "semver": "^7.7.3",
     "vscode-jsonrpc": "^8.2.1",
     "zod": "^4.3.5"
   },
   "devDependencies": {
     "@types/node": "^25.2.0",
+    "@types/semver": "^7.7.1",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
     "esbuild": "^0.27.2",
@@ -56,7 +59,7 @@
     "prettier": "^3.4.0",
     "quicktype-core": "^23.2.6",
     "rimraf": "^6.1.2",
-    "semver": "^7.7.3",
+    "tar": "^7.5.7",
     "tsx": "^4.20.6",
     "typescript": "^5.0.0",
     "vitest": "^4.0.18"

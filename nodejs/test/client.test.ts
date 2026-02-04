@@ -215,4 +215,35 @@ describe("CopilotClient", () => {
             }).toThrow(/githubToken and useLoggedInUser cannot be used with cliUrl/);
         });
     });
+
+    describe("Acquisition options", () => {
+        it("should throw error when acquisition is used with cliPath", () => {
+            expect(() => {
+                new CopilotClient({
+                    cliPath: "/path/to/cli",
+                    acquisition: { downloadDir: "/tmp/cli" },
+                    logLevel: "error",
+                });
+            }).toThrow(/cliPath is mutually exclusive with acquisition/);
+        });
+
+        it("should throw error when acquisition is used with cliUrl", () => {
+            expect(() => {
+                new CopilotClient({
+                    cliUrl: "localhost:8080",
+                    acquisition: { downloadDir: "/tmp/cli" },
+                    logLevel: "error",
+                });
+            }).toThrow(/cliUrl is mutually exclusive with acquisition/);
+        });
+
+        it("should accept acquisition option alone", () => {
+            const client = new CopilotClient({
+                acquisition: { downloadDir: "/tmp/cli" },
+                logLevel: "error",
+            });
+
+            expect((client as any).options.acquisition).toEqual({ downloadDir: "/tmp/cli" });
+        });
+    });
 });
