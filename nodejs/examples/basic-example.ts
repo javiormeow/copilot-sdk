@@ -2,9 +2,9 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------------------------------------------*/
 
-import { z } from "zod";
-import { join } from "node:path";
 import { homedir } from "node:os";
+import { join } from "node:path";
+import { z } from "zod";
 import { CopilotClient, defineTool } from "../src/index.js";
 
 console.log("🚀 Starting Copilot SDK Example\n");
@@ -27,6 +27,7 @@ const client = new CopilotClient({
     logLevel: "info",
     acquisition: {
         downloadDir: join(homedir(), ".copilot-sdk-example", "cli"),
+        minVersion: "0.0.400",
         onProgress: ({ bytesDownloaded, totalBytes }) => {
             if (totalBytes > 0) {
                 const pct = Math.round((bytesDownloaded / totalBytes) * 100);

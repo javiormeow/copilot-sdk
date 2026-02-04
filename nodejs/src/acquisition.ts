@@ -7,7 +7,6 @@ import { rename, rm } from "node:fs/promises";
 import { homedir, platform, arch, tmpdir } from "node:os";
 import { join, dirname, resolve } from "node:path";
 import { spawn } from "node:child_process";
-import { extract } from "tar";
 import * as semver from "semver";
 import { CopilotClient } from "./client.js";
 import { PREFERRED_CLI_VERSION } from "./generated/versions.js";
@@ -212,11 +211,7 @@ async function downloadCli(
         const extractDir = join(tempDir, "extracted");
         mkdirSync(extractDir, { recursive: true });
 
-        if (ext === "zip") {
-            await extractZip(archivePath, extractDir);
-        } else {
-            await extract({ file: archivePath, cwd: extractDir });
-        }
+        await extractArchive(archivePath, extractDir);
 
         const execName = platform() === "win32" ? "copilot.exe" : "copilot";
         const extractedExec = findExecutable(extractDir, execName);
@@ -251,18 +246,15 @@ async function downloadCli(
     }
 }
 
-async function extractZip(zipPath: string, destDir: string): Promise<void> {
+// tar is built-in on Windows 10+, macOS, and Linux
+async function extractArchive(archivePath: string, destDir: string): Promise<void> {
     return new Promise((resolve, reject) => {
-        const proc = spawn("powershell", [
-            "-NoProfile",
-            "-Command",
-            `Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force`,
-        ]);
+        const proc = spawn("tar", ["-xf", archivePath, "-C", destDir], { stdio: "ignore" });
 
         proc.on("error", reject);
         proc.on("exit", (code) => {
             if (code === 0) resolve();
-            else reject(new Error(`Expand-Archive failed with code ${code}`));
+            else reject(new Error(`Archive extraction failed for ${archivePath} (exit code ${code})`));
         });
     });
 }
