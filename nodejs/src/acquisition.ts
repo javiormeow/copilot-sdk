@@ -24,7 +24,7 @@ export { PREFERRED_CLI_VERSION };
 export interface AcquisitionOptions {
     /**
      * Directory where CLI versions will be downloaded and stored.
-     * Should be app-specific (e.g., `~/.myapp/copilot-cli/`).
+     * Should be app-specific, e.g., `path.join(os.homedir(), '.myapp', 'copilot-cli')`.
      */
     downloadDir: string;
 
