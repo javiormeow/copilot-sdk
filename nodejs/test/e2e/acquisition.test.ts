@@ -9,12 +9,6 @@ import { tmpdir, homedir } from "node:os";
 import { CopilotClient } from "../../src/index.js";
 import { acquireCli, PREFERRED_CLI_VERSION } from "../../src/acquisition.js";
 
-/**
- * E2E tests for CLI acquisition.
- * 
- * These tests require network access to download from GitHub Releases.
- * They are skipped in CI environments without network access.
- */
 describe("CLI Acquisition E2E", () => {
     let testDir: string;
 

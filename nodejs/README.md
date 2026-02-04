@@ -655,9 +655,12 @@ try {
 The SDK can automatically download and manage the Copilot CLI for you. This is useful when you can't rely on the CLI being pre-installed.
 
 ```typescript
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 const client = new CopilotClient({
     acquisition: {
-        downloadDir: "~/.myapp/copilot-cli", // Where to store CLI versions
+        downloadDir: join(homedir(), ".myapp", "copilot-cli"), // Where to store CLI versions
     },
 });
 

@@ -16,7 +16,7 @@
   },
   "type": "module",
   "scripts": {
-    "clean": "rimraf --glob dist *.tgz src/generated",
+    "clean": "rimraf --glob dist *.tgz src/generatedOnBuild",
     "prebuild": "tsx scripts/generate-versions.ts",
     "build": "tsx esbuild-copilotsdk-nodejs.ts",
     "test": "vitest run",
