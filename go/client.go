@@ -999,7 +999,7 @@ func (c *Client) verifyProtocolVersion(ctx context.Context) error {
 func (c *Client) startCLIServer(ctx context.Context) error {
 	// Start with user-provided CLI args (inserted before SDK-managed args)
 	args := append([]string{}, c.options.CLIArgs...)
-	
+
 	// Add SDK-managed args
 	args = append(args, "--headless", "--no-auto-update", "--log-level", c.options.LogLevel)
 

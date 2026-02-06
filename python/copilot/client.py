@@ -1119,7 +1119,7 @@ class CopilotClient:
 
         # Start with user-provided CLI args (inserted before SDK-managed args)
         args = list(self.options.get("cli_args", []))
-        
+
         # Add SDK-managed args
         args.extend(["--headless", "--no-auto-update", "--log-level", self.options["log_level"]])
 
