@@ -362,6 +362,24 @@ func TestClient_CLIArgs(t *testing.T) {
 			t.Errorf("Expected 0 CLI args, got %d", len(client.options.CLIArgs))
 		}
 	})
+
+	t.Run("should store a copy of CLIArgs slice", func(t *testing.T) {
+		args := []string{"--custom-flag"}
+		client := NewClient(&ClientOptions{
+			CLIArgs: args,
+		})
+
+		// Modify the original slice
+		args = append(args, "--another-flag")
+
+		// The client's copy should not be affected
+		if len(client.options.CLIArgs) != 1 {
+			t.Errorf("Expected 1 CLI arg, got %d", len(client.options.CLIArgs))
+		}
+		if client.options.CLIArgs[0] != "--custom-flag" {
+			t.Errorf("Expected first arg to be '--custom-flag', got %q", client.options.CLIArgs[0])
+		}
+	})
 }
 
 func TestClient_EnvOptions(t *testing.T) {

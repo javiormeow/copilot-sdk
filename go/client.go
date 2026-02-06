@@ -144,7 +144,7 @@ func NewClient(options *ClientOptions) *Client {
 			opts.CLIPath = options.CLIPath
 		}
 		if options.CLIArgs != nil {
-			opts.CLIArgs = options.CLIArgs
+			opts.CLIArgs = append([]string{}, options.CLIArgs...)
 		}
 		if options.Cwd != "" {
 			opts.Cwd = options.Cwd
