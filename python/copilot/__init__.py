@@ -6,6 +6,15 @@ JSON-RPC based SDK for programmatic control of GitHub Copilot CLI
 
 from .client import CopilotClient
 from .session import CopilotSession
+from .steering import (
+    ConversationManager,
+    MessageQueue,
+    Priority,
+    QueuedMessage,
+    QueueFullError,
+    ShutdownSentinel,
+    StreamingInputGenerator,
+)
 from .tools import define_tool
 from .types import (
     AzureProviderOptions,
@@ -41,6 +50,7 @@ __version__ = "0.1.0"
 
 __all__ = [
     "AzureProviderOptions",
+    "ConversationManager",
     "CopilotClient",
     "CopilotSession",
     "ConnectionState",
@@ -51,6 +61,7 @@ __all__ = [
     "MCPRemoteServerConfig",
     "MCPServerConfig",
     "MessageOptions",
+    "MessageQueue",
     "ModelBilling",
     "ModelCapabilities",
     "ModelInfo",
@@ -60,6 +71,8 @@ __all__ = [
     "PermissionRequestResult",
     "PingResponse",
     "ProviderConfig",
+    "QueuedMessage",
+    "QueueFullError",
     "ResumeSessionConfig",
     "SessionConfig",
     "SessionEvent",
