@@ -65,6 +65,7 @@ public partial class CapiProxy : IAsyncDisposable
             {
                 if (e.Data == null) return;
                 errorOutput.AppendLine(e.Data);
+                Console.Error.WriteLine(e.Data);
             };
 
             _process.Start();
@@ -78,7 +79,9 @@ public partial class CapiProxy : IAsyncDisposable
                 }
             });
 
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            // Use longer timeout on Windows due to slower process startup
+            var timeoutSeconds = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 30 : 10;
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
             cts.Token.Register(() => tcs.TrySetException(new TimeoutException("Timeout waiting for proxy")));
 
             return await tcs.Task;
